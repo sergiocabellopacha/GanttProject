@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Chart - Professional</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="toolbar">
+        <div class="toolbar-section">
+            <button id="new-project" class="btn">Nuevo</button>
+            <button id="import-json" class="btn">Abrir</button>
+            <button id="export-json" class="btn">Guardar</button>
+        </div>
+        <div class="toolbar-section">
+            <button id="add-task" class="btn btn-primary">+ Añadir</button>
+            <button id="expand-all" class="btn">Expandir Todo</button>
+            <button id="collapse-all" class="btn">Colapsar Todo</button>
+            <button id="update-groups" class="btn">Actualizar Grupos</button>
+        </div>
+        <div class="toolbar-section">
+            <button id="zoom-in" class="btn">Zoom +</button>
+            <button id="zoom-out" class="btn">Zoom -</button>
+            <button id="zoom-fit" class="btn">Ajustar</button>
+        </div>
+        <input type="file" id="file-input" style="display:none" accept="application/json">
+    </div>
+
+    <div class="gantt-wrapper">
+        <div class="gantt-table">
+            <div class="table-header">
+                <div class="col-task-name">Nombre de Tarea</div>
+                <div class="col-id">ID</div>
+                <div class="col-start">Inicio</div>
+                <div class="col-end">Fin</div>
+                <div class="col-duration">Duración</div>
+                <div class="col-progress">Progreso %</div>
+                <div class="col-dependency">Dependencia</div>
+                <div class="col-resource">Recursos</div>
+                <div class="col-color">Color</div>
+            </div>
+            <div class="table-body" id="task-table-body">
+                <!-- Tasks will be populated here -->
+            </div>
+        </div>
+
+        <div class="gantt-chart">
+            <div class="timeline-header" id="timeline-header">
+                <!-- Timeline will be populated here -->
+            </div>
+            <div class="chart-body" id="chart-body">
+                <!-- Chart bars will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Edit Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Tarea</h2>
+            <form id="task-form">
+                <div class="form-row">
+                    <label>Nombre: <input type="text" id="task-name" required></label>
+                    <label>Color: <input type="color" id="task-color" value="#4a90e2"></label>
+                </div>
+                <div class="form-row">
+                    <label>Tipo: 
+                        <select id="task-type" onchange="toggleTaskFields()">
+                            <option value="task">Tarea</option>
+                            <option value="group">Grupo</option>
+                        </select>
+                    </label>
+                    <label>Grupo Padre: 
+                        <select id="task-parent">
+                            <option value="">Ninguno (Raíz)</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="form-row">
+                    <label>Fecha Inicio: <input type="date" id="task-start" required></label>
+                    <label>Fecha Fin: <input type="date" id="task-end" required></label>
+                </div>
+                <div class="form-row">
+                    <label>Progreso: <input type="number" id="task-progress" min="0" max="100" value="0"> %</label>
+                    <label>Recursos: <input type="text" id="task-resources" placeholder="Asignado a..."></label>
+                </div>
+                <label>Dependencias: <input type="text" id="task-dependencies" placeholder="IDs separados por comas"></label>
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" id="delete-task" class="btn btn-danger">Eliminar</button>
+                    <button type="button" class="btn" onclick="document.getElementById('task-modal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
