@@ -3,26 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt Chart - Professional</title>
+    <title>ProjectFlow Pro - Gestión de Proyectos</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="toolbar">
-        <div class="toolbar-section">
-            <button id="new-project" class="btn">Nuevo</button>
-            <button id="import-json" class="btn">Abrir</button>
-            <button id="export-json" class="btn">Guardar</button>
-        </div>
-        <div class="toolbar-section">
-            <button id="add-task" class="btn btn-primary">+ Añadir</button>
-            <button id="expand-all" class="btn">Expandir Todo</button>
-            <button id="collapse-all" class="btn">Colapsar Todo</button>
-            <button id="update-groups" class="btn">Actualizar Grupos</button>
-        </div>
-        <div class="toolbar-section">
-            <button id="zoom-in" class="btn">Zoom +</button>
-            <button id="zoom-out" class="btn">Zoom -</button>
-            <button id="zoom-fit" class="btn">Ajustar</button>
+    <div class="app-header">
+        <div class="header-content">
+            <div class="title-section">
+                <h1 class="app-title">ProjectFlow Pro</h1>
+                <p class="app-subtitle">Gestión profesional de proyectos con diagramas de Gantt</p>
+            </div>
+            <div class="toolbar-integrated">
+                <div class="toolbar-left">
+                    <div class="toolbar-section file-actions">
+                        <button id="new-project" class="btn">Nuevo</button>
+                        <button id="import-json" class="btn">Abrir</button>
+                        <button id="export-json" class="btn">Guardar</button>
+                    </div>
+                    <div class="toolbar-section task-actions">
+                        <button id="add-task" class="btn btn-primary">+ Añadir</button>
+                        <button id="expand-all" class="btn">Expandir Todo</button>
+                        <button id="collapse-all" class="btn">Colapsar Todo</button>
+                        <button id="update-groups" class="btn">Actualizar Grupos</button>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <div class="toolbar-section zoom-actions">
+                        <button id="zoom-in" class="btn">Zoom +</button>
+                        <button id="zoom-out" class="btn">Zoom -</button>
+                        <button id="zoom-fit" class="btn">Ajustar</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <input type="file" id="file-input" style="display:none" accept="application/json">
     </div>
