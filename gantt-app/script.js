@@ -193,7 +193,7 @@ function renderTaskTable() {
                 </div>
                 <div class="task-cell">${duration} días</div>
                 <div class="task-cell">
-                    <input type="number" value="${task.progress}" min="0" max="100" style="width: 50px;" onchange="updateTaskField(${task.id}, 'progress', this.value)">%
+                    <input type="number" value="${task.progress}" min="0" max="100" style="width: 50px;" onchange="updateTaskField(${task.id}, 'progress', this.value)">
                 </div>
                 <div class="task-cell">${task.dependencies.join(', ')}</div>
                 <div class="task-cell">${task.resources || ''}</div>

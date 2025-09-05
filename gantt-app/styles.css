@@ -90,6 +90,7 @@ body {
     grid-template-columns: 200px 50px 120px 120px 80px 80px 120px 120px 60px;
     background: #f8f9fa;
     border-bottom: 2px solid #dee2e6;
+    border-left: 2px solid transparent;
     font-weight: 600;
     font-size: 12px;
     color: #495057;
@@ -114,6 +115,7 @@ body {
     display: grid;
     grid-template-columns: 200px 50px 120px 120px 80px 80px 120px 120px 60px;
     border-bottom: 1px solid #e9ecef;
+    border-left: 2px solid #dee2e6;
     height: 40px;
     min-height: 40px;
     transition: background-color 0.2s;
@@ -126,7 +128,7 @@ body {
 .task-row.group-row {
     background: #e3f2fd;
     font-weight: 600;
-    border-left: 4px solid #2196f3;
+    border-left: 2px solid #2196f3;
 }
 
 .task-row.group-row:hover {
@@ -197,6 +199,21 @@ body {
 .task-cell input:focus {
     outline: 2px solid #007bff;
     border-radius: 2px;
+}
+
+/* Estilos específicos para columnas con texto centrado */
+.task-row .task-cell:nth-child(2), /* ID */
+.task-row .task-cell:nth-child(5), /* Duración */
+.task-row .task-cell:nth-child(6), /* Progreso % */
+.task-row .task-cell:nth-child(7)  /* Dependencia */
+{
+    text-align: center;
+    justify-content: center;
+}
+
+/* Centrar también los inputs dentro de estas columnas */
+.task-row .task-cell:nth-child(6) input {
+    text-align: center;
 }
 
 /* Estilos específicos para campos de fecha */
