@@ -24,6 +24,7 @@ let ganttData = {
 let zoomLevel = 1; // 1 = days, 2 = weeks, 3 = months
 let dayWidth = 30; // pixels per day - Global variable for zoom
 let currentEditingTask = null;
+let isCreatingNewTask = false; // Para diferenciar entre crear y editar
 let nextTaskId = 15;
 let collapsedGroups = new Set(); // Para rastrear grupos colapsados
 
@@ -197,7 +198,7 @@ function renderTaskTable() {
                 <div class="task-cell">${task.dependencies.join(', ')}</div>
                 <div class="task-cell">${task.resources || ''}</div>
                 <div class="task-cell">
-                    <div class="color-indicator" style="background-color: ${task.color}" onclick="changeTaskColor(${task.id})"></div>
+                    <div class="color-indicator" style="background-color: ${task.color}" data-task-id="${task.id}"></div>
                 </div>
             </div>
         `;
@@ -236,7 +237,7 @@ function renderChart() {
         html += `
             <div class="chart-row ${isGroup ? 'group-row' : ''}" style="height: 40px;">
                 ${isGroup ? 
-                    `<div class="group-bar" style="left: ${left}px; width: ${width}px;">${task.name}</div>` :
+                    `<div class="group-bar" style="left: ${left}px; width: ${width}px; background: ${task.color} !important;">${task.name}</div>` :
                     `<div class="task-bar" style="left: ${left}px; width: ${width}px; background-color: ${task.color};" onclick="editTask(${task.id})" title="${task.name}">
                         <div class="progress-bar" style="width: ${task.progress}%;"></div>
                         <span>${task.name}</span>
@@ -344,10 +345,85 @@ function updateTaskField(taskId, field, value) {
 
 function changeTaskColor(taskId) {
     const task = ganttData.tasks.find(t => t.id === taskId);
-    if (task) {
-        currentEditingTask = task;
-        document.getElementById('task-color').click();
+    if (!task) return;
+    
+    // Cerrar cualquier popup de color existente
+    const existingPopup = document.querySelector('.color-popup');
+    if (existingPopup) {
+        existingPopup.remove();
     }
+    
+    // Guardar color original para poder cancelar
+    const originalColor = task.color;
+    
+    // Crear popup de color
+    const popup = document.createElement('div');
+    popup.className = 'color-popup';
+    popup.innerHTML = `
+        <div class="color-popup-content">
+            <label>Cambiar color de la tarea:</label>
+            <input type="color" id="temp-color-input" value="${task.color}">
+            <div class="color-popup-buttons">
+                <button class="btn btn-primary btn-sm" id="apply-color">Aplicar</button>
+                <button class="btn btn-sm" id="cancel-color">Cancelar</button>
+            </div>
+        </div>
+    `;
+    
+    // Estilos del popup
+    popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 1001;
+        min-width: 220px;
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(popup);
+    
+    // Event listeners
+    const colorInput = popup.querySelector('#temp-color-input');
+    const applyBtn = popup.querySelector('#apply-color');
+    const cancelBtn = popup.querySelector('#cancel-color');
+    
+    // Vista previa en tiempo real
+    colorInput.oninput = function() {
+        task.color = this.value;
+        renderAll();
+    };
+    
+    applyBtn.onclick = function() {
+        // El color ya está aplicado por la vista previa
+        popup.remove();
+    };
+    
+    cancelBtn.onclick = function() {
+        // Restaurar color original
+        task.color = originalColor;
+        renderAll();
+        popup.remove();
+    };
+    
+    // Cerrar con ESC (cancelar)
+    const handleKeyDown = function(e) {
+        if (e.key === 'Escape') {
+            task.color = originalColor;
+            renderAll();
+            popup.remove();
+            document.removeEventListener('keydown', handleKeyDown);
+        }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Enfocar el input de color
+    colorInput.focus();
 }
 
 function editTask(taskId) {
@@ -355,6 +431,7 @@ function editTask(taskId) {
     if (!task) return;
     
     currentEditingTask = task;
+    isCreatingNewTask = false; // Estamos editando, no creando
     
     document.getElementById('task-name').value = task.name;
     document.getElementById('task-start').value = task.start;
@@ -376,6 +453,14 @@ function editTask(taskId) {
     // Actualizar campos según el tipo
     toggleTaskFields();
     
+    // Mostrar/ocultar botón eliminar según si estamos creando o editando
+    const deleteButton = document.getElementById('delete-task');
+    if (isCreatingNewTask) {
+        deleteButton.style.display = 'none';
+    } else {
+        deleteButton.style.display = 'inline-block';
+    }
+    
     document.getElementById('task-modal').style.display = 'block';
 }
 
@@ -393,8 +478,32 @@ function addNewTask() {
     };
     
     ganttData.tasks.push(newTask);
+    currentEditingTask = newTask;
+    isCreatingNewTask = true; // Estamos creando una nueva tarea
+    
+    // Configurar el formulario con los valores de la nueva tarea
+    document.getElementById('task-name').value = newTask.name;
+    document.getElementById('task-start').value = newTask.start;
+    document.getElementById('task-end').value = newTask.end;
+    document.getElementById('task-progress').value = newTask.progress;
+    document.getElementById('task-resources').value = newTask.resources;
+    document.getElementById('task-dependencies').value = '';
+    document.getElementById('task-color').value = newTask.color;
+    document.getElementById('task-type').value = 'task';
+    
+    // Poblar dropdown de grupos padre
+    populateParentDropdown();
+    document.getElementById('task-parent').value = '';
+    
+    // Actualizar campos según el tipo
+    toggleTaskFields();
+    
+    // Ocultar botón eliminar para nuevas tareas
+    const deleteButton = document.getElementById('delete-task');
+    deleteButton.style.display = 'none';
+    
+    document.getElementById('task-modal').style.display = 'block';
     renderAll();
-    editTask(newTask.id);
 }
 
 // Función para poblar el dropdown de grupos padre
@@ -588,6 +697,10 @@ document.getElementById('task-form').onsubmit = function(e) {
         }
     }
     
+    // Resetear variables después de guardar
+    currentEditingTask = null;
+    isCreatingNewTask = false;
+    
     document.getElementById('task-modal').style.display = 'none';
     renderAll();
 };
@@ -603,14 +716,68 @@ document.getElementById('delete-task').onclick = function() {
             task.dependencies = task.dependencies.filter(d => d !== currentEditingTask.id);
         });
         
+        // Resetear variables después de eliminar
+        currentEditingTask = null;
+        isCreatingNewTask = false;
+        
         document.getElementById('task-modal').style.display = 'none';
         renderAll();
     }
 };
 
 document.querySelector('.close').onclick = function() {
-    document.getElementById('task-modal').style.display = 'none';
+    cancelTask();
 };
+
+// Función para manejar la cancelación del modal
+function cancelTask() {
+    if (isCreatingNewTask && currentEditingTask) {
+        // Si estamos creando una nueva tarea, la eliminamos al cancelar
+        const taskIndex = ganttData.tasks.findIndex(t => t.id === currentEditingTask.id);
+        if (taskIndex !== -1) {
+            ganttData.tasks.splice(taskIndex, 1);
+        }
+        renderAll();
+    }
+    
+    // Resetear variables
+    currentEditingTask = null;
+    isCreatingNewTask = false;
+    
+    // Cerrar modal
+    document.getElementById('task-modal').style.display = 'none';
+}
+
+// Event listener para el botón cancelar
+document.getElementById('cancel-task').onclick = function() {
+    cancelTask();
+};
+
+// Event listener para cambios en el color - vista previa en tiempo real
+document.getElementById('task-color').addEventListener('input', function() {
+    // Este evento se dispara mientras el usuario está cambiando el color
+    // Útil para vista previa en tiempo real si se desea
+});
+
+document.getElementById('task-color').addEventListener('change', function() {
+    // Este evento se dispara cuando el usuario termina de cambiar el color
+    if (currentEditingTask) {
+        currentEditingTask.color = this.value;
+        // No renderizar aquí para evitar conflictos, el color se guardará al enviar el formulario
+    }
+});
+
+// Event listener delegado para los indicadores de color
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('color-indicator')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const taskId = parseInt(e.target.getAttribute('data-task-id'));
+        if (taskId) {
+            changeTaskColor(taskId);
+        }
+    }
+});
 
 document.getElementById('import-json').onclick = () => {
     document.getElementById('file-input').click();
@@ -751,13 +918,14 @@ document.getElementById('update-groups').onclick = function() {
     alert('Fechas de grupos actualizadas automáticamente');
 };
 
-// Modal close on outside click
-window.onclick = function(event) {
-    const modal = document.getElementById('task-modal');
-    if (event.target === modal) {
-        modal.style.display = 'none';
-    }
-};
+// Modal close on outside click - DISABLED
+// The modal should only close when clicking specific buttons (Save, Delete, Cancel, X)
+// window.onclick = function(event) {
+//     const modal = document.getElementById('task-modal');
+//     if (event.target === modal) {
+//         modal.style.display = 'none';
+//     }
+// };
 
 // Make functions globally available
 window.toggleGroup = toggleGroup;

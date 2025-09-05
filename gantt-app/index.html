@@ -63,7 +63,9 @@
             <form id="task-form">
                 <div class="form-row">
                     <label>Nombre: <input type="text" id="task-name" required></label>
-                    <label>Color: <input type="color" id="task-color" value="#4a90e2"></label>
+                    <label>Color: 
+                        <input type="color" id="task-color" value="#4a90e2" title="Seleccionar color de la tarea">
+                    </label>
                 </div>
                 <div class="form-row">
                     <label>Tipo: 
@@ -90,7 +92,7 @@
                 <div class="form-buttons">
                     <button type="submit" class="btn btn-primary">Guardar</button>
                     <button type="button" id="delete-task" class="btn btn-danger">Eliminar</button>
-                    <button type="button" class="btn" onclick="document.getElementById('task-modal').style.display='none'">Cancelar</button>
+                    <button type="button" id="cancel-task" class="btn">Cancelar</button>
                 </div>
             </form>
         </div>

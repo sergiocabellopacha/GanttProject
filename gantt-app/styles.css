@@ -87,7 +87,7 @@ body {
 /* Table Styles */
 .table-header {
     display: grid;
-    grid-template-columns: 200px 50px 100px 100px 80px 80px 120px 120px 60px;
+    grid-template-columns: 200px 50px 120px 120px 80px 80px 120px 120px 60px;
     background: #f8f9fa;
     border-bottom: 2px solid #dee2e6;
     font-weight: 600;
@@ -101,6 +101,8 @@ body {
     border-right: 1px solid #dee2e6;
     display: flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .table-body {
@@ -110,7 +112,7 @@ body {
 
 .task-row {
     display: grid;
-    grid-template-columns: 200px 50px 100px 100px 80px 80px 120px 120px 60px;
+    grid-template-columns: 200px 50px 120px 120px 80px 80px 120px 120px 60px;
     border-bottom: 1px solid #e9ecef;
     height: 40px;
     min-height: 40px;
@@ -195,6 +197,27 @@ body {
 .task-cell input:focus {
     outline: 2px solid #007bff;
     border-radius: 2px;
+}
+
+/* Estilos específicos para campos de fecha */
+.task-cell input[type="date"] {
+    padding: 4px 6px;
+    min-width: 100px;
+    font-size: 12px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.task-cell input[type="date"]:hover {
+    border-color: #dee2e6;
+    background: #f8f9fa;
+}
+
+.task-cell input[type="date"]:focus {
+    outline: 2px solid #007bff;
+    border-radius: 2px;
+    border-color: #007bff;
 }
 
 .task-name-cell {
@@ -509,6 +532,13 @@ body {
     
     .table-header,
     .task-row {
-        grid-template-columns: 150px 40px 80px 80px 60px 60px 100px 100px 50px;
+        grid-template-columns: 150px 40px 90px 90px 60px 60px 100px 100px 50px;
     }
+}
+
+/* Estilos específicos para columnas de fecha */
+.task-cell:nth-child(3), /* Columna de inicio */
+.task-cell:nth-child(4) { /* Columna de fin */
+    justify-content: center;
+    padding: 6px;
 }
