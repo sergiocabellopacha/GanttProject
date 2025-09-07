@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProjectFlow Pro - Gestión de Proyectos</title>
+    <title>ProjectFlow - Gestión de Proyectos</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-header">
         <div class="header-content">
             <div class="title-section">
-                <h1 class="app-title">ProjectFlow Pro</h1>
-                <p class="app-subtitle">Gestión profesional de proyectos con diagramas de Gantt</p>
+                <h1 class="app-title">ProjectFlow</h1>
+                <p class="app-subtitle">Gestión de proyectos con diagramas de Gantt</p>
             </div>
             <div class="toolbar-integrated">
                 <div class="toolbar-left">
@@ -19,6 +19,8 @@
                         <button id="new-project" class="btn">Nuevo</button>
                         <button id="import-json" class="btn">Abrir</button>
                         <button id="export-json" class="btn">Guardar</button>
+                        <button id="import-csv" class="btn">Abrir CSV</button>
+                        <button id="export-csv" class="btn">Guardar CSV</button>
                     </div>
                     <div class="toolbar-section task-actions">
                         <button id="add-task" class="btn btn-primary">+ Añadir</button>
@@ -38,6 +40,7 @@
             </div>
         </div>
         <input type="file" id="file-input" style="display:none" accept="application/json">
+        <input type="file" id="csv-file-input" style="display:none" accept=".csv,text/csv">
     </div>
 
     <div class="gantt-wrapper">
@@ -47,7 +50,7 @@
                 <div class="col-id">ID</div>
                 <div class="col-start">Inicio</div>
                 <div class="col-end">Fin</div>
-                <div class="col-duration">Duración</div>
+                <div class="col-duration">Duración (Días Laborables)</div>
                 <div class="col-progress">Progreso %</div>
                 <div class="col-dependency">Dependencia</div>
                 <div class="col-resource">Recursos</div>
@@ -94,8 +97,8 @@
                     </label>
                 </div>
                 <div class="form-row">
-                    <label>Fecha Inicio: <input type="date" id="task-start" required></label>
-                    <label>Fecha Fin: <input type="date" id="task-end" required></label>
+                    <label>Fecha Inicio: <input type="date" id="task-start" required onchange="validateWorkdayDate(this)"></label>
+                    <label>Fecha Fin: <input type="date" id="task-end" required onchange="validateWorkdayDate(this)"></label>
                 </div>
                 <div class="form-row">
                     <label>Progreso: <input type="number" id="task-progress" min="0" max="100" value="0"></label>
@@ -116,7 +119,7 @@
         <div class="modal-content about-modal-content">
             <span class="close about-close">&times;</span>
             <div class="about-header">
-                <h2>Acerca de ProjectFlow Pro</h2>
+                <h2>Acerca de ProjectFlow</h2>
             </div>
             <div class="about-body">
                 <div class="about-section">
@@ -148,7 +151,7 @@
                     <ul>
                         <li>HTML5, CSS3 y JavaScript vanilla</li>
                         <li>Asistencia de <strong>GitHub Copilot</strong></li>
-                        <li>Asistencia de <strong>Claude Sonnet 3.5</strong></li>
+                        <li>Asistencia de <strong>Claude Sonnet 4</strong></li>
                     </ul>
                 </div>
                 
@@ -158,6 +161,7 @@
                         <li>Diagramas de Gantt interactivos</li>
                         <li>Gestión de tareas y dependencias</li>
                         <li>Importación/Exportación JSON</li>
+                        <li>Importación/Exportación CSV</li>
                         <li>Interfaz responsive y moderna</li>
                         <li>Gestión de recursos y progreso</li>
                     </ul>

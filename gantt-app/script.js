@@ -58,6 +58,48 @@ function getDaysDifference(start, end) {
     return Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 }
 
+// Función para verificar si un día es fin de semana
+function isWeekend(date) {
+    const day = parseDate(date).getDay();
+    return day === 0 || day === 6; // 0 = Domingo, 6 = Sábado
+}
+
+// Función para obtener el siguiente día laborable
+function getNextWorkday(date) {
+    const nextDay = addDays(parseDate(date), 1);
+    if (isWeekend(formatDate(nextDay))) {
+        return getNextWorkday(formatDate(nextDay));
+    }
+    return formatDate(nextDay);
+}
+
+// Función para obtener el día laborable anterior
+function getPreviousWorkday(date) {
+    const prevDay = addDays(parseDate(date), -1);
+    if (isWeekend(formatDate(prevDay))) {
+        return getPreviousWorkday(formatDate(prevDay));
+    }
+    return formatDate(prevDay);
+}
+
+// Función para calcular días laborables entre dos fechas (excluyendo fines de semana)
+function getWorkdaysDifference(start, end) {
+    const startDate = parseDate(start);
+    const endDate = parseDate(end);
+    let count = 0;
+    let currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+        const day = currentDate.getDay();
+        if (day !== 0 && day !== 6) { // No es domingo (0) ni sábado (6)
+            count++;
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return count;
+}
+
 // Utility functions for drag and drop
 function pixelsToDate(pixels, dateRange) {
     const daysSinceStart = Math.round(pixels / dayWidth);
@@ -196,7 +238,7 @@ function renderTaskTable() {
     const orderedTasks = getOrderedTasks();
     
     orderedTasks.forEach(task => {
-        const duration = getDaysDifference(task.start, task.end);
+        const duration = getWorkdaysDifference(task.start, task.end);
         const isGroup = task.group;
         const isCollapsed = collapsedGroups.has(task.id);
         const hasParent = task.parent;
@@ -219,10 +261,10 @@ function renderTaskTable() {
                 </div>
                 <div class="task-cell">${task.id}</div>
                 <div class="task-cell">
-                    <input type="date" value="${task.start}" onchange="updateTaskField(${task.id}, 'start', this.value)">
+                    <input type="date" value="${task.start}" onchange="validateWorkdayDate(this); updateTaskField(${task.id}, 'start', this.value)">
                 </div>
                 <div class="task-cell">
-                    <input type="date" value="${task.end}" onchange="updateTaskField(${task.id}, 'end', this.value)">
+                    <input type="date" value="${task.end}" onchange="validateWorkdayDate(this); updateTaskField(${task.id}, 'end', this.value)">
                 </div>
                 <div class="task-cell">${duration} días</div>
                 <div class="task-cell">
@@ -795,6 +837,18 @@ function updateDependencyLines() {
 }
 
 // Task management functions
+function validateWorkdayDate(inputElement) {
+    const selectedDate = inputElement.value;
+    if (selectedDate && isWeekend(selectedDate)) {
+        // Si es fin de semana, buscar el siguiente día laborable
+        const nextWorkday = getNextWorkday(selectedDate);
+        inputElement.value = nextWorkday;
+        
+        // Mostrar mensaje al usuario
+        //alert(`Los fines de semana no están permitidos. Se ha ajustado la fecha al siguiente día laborable: ${nextWorkday}`);
+    }
+}
+
 function updateTaskField(taskId, field, value) {
     const task = ganttData.tasks.find(t => t.id === taskId);
     if (task) {
@@ -929,11 +983,25 @@ function editTask(taskId) {
 }
 
 function addNewTask() {
+    // Obtener fecha inicial que sea día laborable
+    let startDate = formatDate(new Date());
+    if (isWeekend(startDate)) {
+        startDate = getNextWorkday(startDate);
+    }
+    
+    // Calcular fecha de fin que también sea día laborable (después de 3 días laborables)
+    let endDate = startDate;
+    let workdaysAdded = 0;
+    while (workdaysAdded < 2) { // Solo necesitamos agregar 2 días laborables más porque ya tenemos el día de inicio
+        endDate = getNextWorkday(endDate);
+        workdaysAdded++;
+    }
+    
     const newTask = {
         id: nextTaskId++,
         name: "Nueva Tarea",
-        start: formatDate(new Date()),
-        end: formatDate(addDays(new Date(), 3)),
+        start: startDate,
+        end: endDate,
         progress: 0,
         dependencies: [],
         resources: "",
@@ -1296,6 +1364,158 @@ document.getElementById('export-json').onclick = () => {
     URL.revokeObjectURL(url);
 };
 
+// CSV Export/Import functionality
+function convertToCSV(data) {
+    const headers = [
+        'ID', 'Nombre', 'Inicio', 'Fin', 'Progreso', 'Dependencias', 
+        'Recursos', 'Color', 'Es Grupo', 'Grupo Padre'
+    ];
+    
+    const csvContent = [headers.join(',')];
+    
+    data.tasks.forEach(task => {
+        const row = [
+            task.id,
+            `"${task.name.replace(/"/g, '""')}"`, // Escape quotes in names
+            task.start,
+            task.end,
+            task.progress || 0,
+            `"${(task.dependencies || []).join('|')}"`, // Dependencies separated by pipe
+            `"${(task.resources || '').replace(/"/g, '""')}"`, // Escape quotes in resources
+            task.color || '#007bff',
+            task.group ? 'true' : 'false',
+            task.parent || ''
+        ];
+        csvContent.push(row.join(','));
+    });
+    
+    return csvContent.join('\n');
+}
+
+function parseCSV(csvText) {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) throw new Error('El archivo CSV debe contener al menos una fila de encabezados y una fila de datos');
+    
+    // Skip header row
+    const dataLines = lines.slice(1);
+    const tasks = [];
+    
+    dataLines.forEach((line, index) => {
+        try {
+            // Simple CSV parser - handles quoted fields
+            const values = parseCSVLine(line);
+            
+            if (values.length < 10) {
+                console.warn(`Fila ${index + 2}: Datos insuficientes, completando con valores por defecto`);
+            }
+            
+            const task = {
+                id: parseInt(values[0]) || (index + 1),
+                name: values[1] ? values[1].replace(/^"|"$/g, '').replace(/""/g, '"') : `Tarea ${index + 1}`,
+                start: values[2] || new Date().toISOString().split('T')[0],
+                end: values[3] || new Date().toISOString().split('T')[0],
+                progress: parseInt(values[4]) || 0,
+                dependencies: values[5] ? values[5].replace(/^"|"$/g, '').split('|').filter(d => d.trim()).map(d => parseInt(d.trim())).filter(d => !isNaN(d)) : [],
+                resources: values[6] ? values[6].replace(/^"|"$/g, '').replace(/""/g, '"') : '',
+                color: values[7] || '#007bff',
+                group: values[8] === 'true',
+                parent: values[9] ? parseInt(values[9]) : undefined
+            };
+            
+            // Remove parent property if undefined
+            if (task.parent === undefined) {
+                delete task.parent;
+            }
+            
+            tasks.push(task);
+        } catch (error) {
+            console.error(`Error procesando fila ${index + 2}:`, error);
+            throw new Error(`Error en fila ${index + 2}: ${error.message}`);
+        }
+    });
+    
+    return { tasks };
+}
+
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        
+        if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+                // Escaped quote
+                current += '"';
+                i++; // Skip next quote
+            } else {
+                // Toggle quote state
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            // Field separator
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    // Add the last field
+    result.push(current);
+    
+    return result;
+}
+
+document.getElementById('export-csv').onclick = () => {
+    try {
+        const csvData = convertToCSV(ganttData);
+        // Agregar BOM UTF-8 para que Excel reconozca correctamente los caracteres especiales
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvData], {type: 'text/csv;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'gantt-project.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        alert('Error al exportar CSV: ' + error.message);
+    }
+};
+
+document.getElementById('import-csv').onclick = () => {
+    document.getElementById('csv-file-input').click();
+};
+
+document.getElementById('csv-file-input').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            const csvText = evt.target.result;
+            const data = parseCSV(csvText);
+            
+            if (data.tasks && data.tasks.length > 0) {
+                ganttData = data;
+                nextTaskId = Math.max(...ganttData.tasks.map(t => t.id)) + 1;
+                renderAll();
+                alert(`CSV importado exitosamente. ${data.tasks.length} tareas cargadas.`);
+            } else {
+                alert('El archivo CSV no contiene tareas válidas.');
+            }
+        } catch (err) {
+            alert('Error al procesar CSV: ' + err.message);
+        }
+    };
+    reader.readAsText(file, 'UTF-8');
+};
+
 document.getElementById('new-project').onclick = () => {
     if (confirm('¿Crear un nuevo proyecto? Se perderán los cambios no guardados.')) {
         ganttData.tasks = [];
@@ -1423,6 +1643,7 @@ window.toggleGroup = toggleGroup;
 window.editTask = editTask;
 window.updateTaskField = updateTaskField;
 window.changeTaskColor = changeTaskColor;
+window.validateWorkdayDate = validateWorkdayDate;
 
 // Initialize
 renderAll();

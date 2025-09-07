@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Días Laborables</title>
+</head>
+<body>
+    <h1>Prueba de Funciones de Días Laborables</h1>
+    
+    <h2>Pruebas:</h2>
+    <div id="results"></div>
+    
+    <h2>Prueba de Selector de Fecha:</h2>
+    <input type="date" id="test-date" onchange="validateWorkdayDate(this)">
+    
+    <script>
+        // Date utilities
+        function parseDate(dateStr) {
+            return new Date(dateStr);
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function addDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        // Función para verificar si un día es fin de semana
+        function isWeekend(date) {
+            const day = parseDate(date).getDay();
+            return day === 0 || day === 6; // 0 = Domingo, 6 = Sábado
+        }
+
+        // Función para obtener el siguiente día laborable
+        function getNextWorkday(date) {
+            const nextDay = addDays(parseDate(date), 1);
+            if (isWeekend(formatDate(nextDay))) {
+                return getNextWorkday(formatDate(nextDay));
+            }
+            return formatDate(nextDay);
+        }
+
+        // Función para calcular días laborables entre dos fechas (excluyendo fines de semana)
+        function getWorkdaysDifference(start, end) {
+            const startDate = parseDate(start);
+            const endDate = parseDate(end);
+            let count = 0;
+            let currentDate = new Date(startDate);
+            
+            while (currentDate <= endDate) {
+                const day = currentDate.getDay();
+                if (day !== 0 && day !== 6) { // No es domingo (0) ni sábado (6)
+                    count++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            return count;
+        }
+
+        function validateWorkdayDate(inputElement) {
+            const selectedDate = inputElement.value;
+            if (selectedDate && isWeekend(selectedDate)) {
+                // Si es fin de semana, buscar el siguiente día laborable
+                const nextWorkday = getNextWorkday(selectedDate);
+                inputElement.value = nextWorkday;
+                
+                // Mostrar mensaje al usuario
+                alert(`Los fines de semana no están permitidos. Se ha ajustado la fecha al siguiente día laborable: ${nextWorkday}`);
+            }
+        }
+
+        // Hacer pruebas
+        function runTests() {
+            const results = document.getElementById('results');
+            let html = '';
+            
+            // Prueba 1: Lunes a viernes (debería ser 5 días laborables)
+            const monday = '2025-09-01'; // Lunes
+            const friday = '2025-09-05'; // Viernes
+            const workdays1 = getWorkdaysDifference(monday, friday);
+            html += `<p>Lunes (${monday}) a Viernes (${friday}): ${workdays1} días laborables (esperado: 5)</p>`;
+            
+            // Prueba 2: Incluye fin de semana
+            const monday2 = '2025-09-01'; // Lunes
+            const monday3 = '2025-09-08'; // Lunes siguiente
+            const workdays2 = getWorkdaysDifference(monday2, monday3);
+            html += `<p>Lunes (${monday2}) a Lunes siguiente (${monday3}): ${workdays2} días laborables (esperado: 6)</p>`;
+            
+            // Prueba 3: Verificar fin de semana
+            const saturday = '2025-09-06'; // Sábado
+            const sunday = '2025-09-07'; // Domingo
+            html += `<p>¿Es ${saturday} fin de semana? ${isWeekend(saturday)} (esperado: true)</p>`;
+            html += `<p>¿Es ${sunday} fin de semana? ${isWeekend(sunday)} (esperado: true)</p>`;
+            html += `<p>¿Es ${monday} fin de semana? ${isWeekend(monday)} (esperado: false)</p>`;
+            
+            // Prueba 4: Siguiente día laborable
+            const nextWorkday = getNextWorkday(saturday);
+            html += `<p>Siguiente día laborable después de ${saturday}: ${nextWorkday} (esperado: 2025-09-08)</p>`;
+            
+            results.innerHTML = html;
+        }
+        
+        // Ejecutar pruebas al cargar la página
+        runTests();
+    </script>
+</body>
+</html>
