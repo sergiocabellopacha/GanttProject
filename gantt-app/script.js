@@ -328,7 +328,10 @@ function renderChart() {
                             pathD = `M ${fromX} ${fromY} L ${curveX1} ${fromY} L ${curveX1} ${curveY} L ${curveX2} ${curveY} L ${curveX2} ${toY} L ${toX} ${toY}`;
                         }
                         
-                        svgContent += `<path d="${pathD}" class="dependency-line" />`;
+                        // Usar el color de la tarea dependiente (origen) para la línea
+                        const dependencyColor = depTask.color || '#e67e22';
+                        const markerId = `arrowhead-${depTask.id}`;
+                        svgContent += `<path d="${pathD}" class="dependency-line" stroke="${dependencyColor}" marker-end="url(#${markerId})" />`;
                     }
                 }
             });
@@ -341,6 +344,18 @@ function renderChart() {
         return !parentCollapsed;
     });
     
+    // Generar marcadores dinámicos para cada tarea
+    let markerDefs = '';
+    ganttData.tasks.forEach(task => {
+        const color = task.color || '#e67e22';
+        markerDefs += `
+            <marker id="arrowhead-${task.id}" markerWidth="10" markerHeight="7" 
+                    refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="${color}" />
+            </marker>
+        `;
+    });
+    
     // Calcular el ancho total exacto (igual que en timeline)
     const totalWidth = totalDays * dayWidth;
     
@@ -348,10 +363,7 @@ function renderChart() {
         ${html}
         <svg class="gantt-svg" style="width: ${totalWidth}px; height: ${visibleTasks.length * 40}px;">
             <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="7" 
-                        refX="9" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" class="dependency-arrow" />
-                </marker>
+                ${markerDefs}
             </defs>
             ${svgContent}
         </svg>
@@ -743,7 +755,10 @@ function updateDependencyLines() {
                             pathD = `M ${fromX} ${fromY} L ${curveX1} ${fromY} L ${curveX1} ${curveY} L ${curveX2} ${curveY} L ${curveX2} ${toY} L ${toX} ${toY}`;
                         }
                         
-                        svgContent += `<path d="${pathD}" class="dependency-line" />`;
+                        // Usar el color de la tarea dependiente (origen) para la línea
+                        const dependencyColor = depTask.color || '#e67e22';
+                        const markerId = `arrowhead-${depTask.id}`;
+                        svgContent += `<path d="${pathD}" class="dependency-line" stroke="${dependencyColor}" marker-end="url(#${markerId})" />`;
                     }
                 }
             });
@@ -753,6 +768,26 @@ function updateDependencyLines() {
     // Actualizar solo el contenido de paths del SVG
     const paths = svg.querySelectorAll('path.dependency-line');
     paths.forEach(path => path.remove());
+    
+    // Actualizar marcadores dinámicos
+    const existingDefs = svg.querySelector('defs');
+    if (existingDefs) {
+        // Limpiar marcadores existentes
+        const existingMarkers = existingDefs.querySelectorAll('marker[id^="arrowhead-"]');
+        existingMarkers.forEach(marker => marker.remove());
+        
+        // Generar nuevos marcadores para cada tarea
+        ganttData.tasks.forEach(task => {
+            const color = task.color || '#e67e22';
+            const markerHTML = `
+                <marker id="arrowhead-${task.id}" markerWidth="10" markerHeight="7" 
+                        refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="${color}" />
+                </marker>
+            `;
+            existingDefs.insertAdjacentHTML('beforeend', markerHTML);
+        });
+    }
     
     if (svgContent) {
         svg.insertAdjacentHTML('beforeend', svgContent);
