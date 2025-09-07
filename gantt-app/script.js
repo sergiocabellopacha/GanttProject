@@ -918,6 +918,30 @@ document.getElementById('update-groups').onclick = function() {
     alert('Fechas de grupos actualizadas automáticamente');
 };
 
+// About modal controls
+const aboutBtn = document.getElementById('about-btn');
+const aboutModal = document.getElementById('about-modal');
+const aboutClose = document.querySelector('.about-close');
+
+if (aboutBtn) {
+    aboutBtn.onclick = () => {
+        aboutModal.style.display = 'block';
+    };
+}
+
+if (aboutClose) {
+    aboutClose.onclick = () => {
+        aboutModal.style.display = 'none';
+    };
+}
+
+// Close about modal when clicking outside
+window.onclick = function(event) {
+    if (event.target === aboutModal) {
+        aboutModal.style.display = 'none';
+    }
+};
+
 // Modal close on outside click - DISABLED
 // The modal should only close when clicking specific buttons (Save, Delete, Cancel, X)
 // window.onclick = function(event) {
