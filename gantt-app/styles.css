@@ -88,6 +88,17 @@ body {
     border-color: #117a8b;
 }
 
+.btn-help {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.btn-help:hover {
+    background: #218838;
+    border-color: #1e7e34;
+}
+
 /* App Header */
 .app-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -138,7 +149,9 @@ body {
 
 .toolbar-integrated .toolbar-right {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
 }
 
 .toolbar-integrated .toolbar-section {
@@ -196,7 +209,7 @@ body {
 /* Table Styles */
 .table-header {
     display: grid;
-    grid-template-columns: 200px 50px 120px 120px 80px 80px 120px 120px 60px;
+    grid-template-columns: minmax(300px, 1fr) 50px 120px 120px 80px 80px 120px 120px 60px;
     background: #f8f9fa;
     border-bottom: 2px solid #dee2e6;
     border-left: 2px solid transparent;
@@ -207,7 +220,7 @@ body {
 }
 
 .table-header > div {
-    padding: 13px 8px;
+    padding: 5px 8px;
     border-right: 1px solid #dee2e6;
     display: flex;
     align-items: center;
@@ -222,7 +235,7 @@ body {
 
 .task-row {
     display: grid;
-    grid-template-columns: 200px 50px 120px 120px 80px 80px 120px 120px 60px;
+    grid-template-columns: minmax(300px, 1fr) 50px 120px 120px 80px 80px 120px 120px 60px;
     border-bottom: 1px solid #e9ecef;
     border-left: 2px solid #dee2e6;
     height: 40px;
@@ -352,10 +365,22 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0; /* Importante para permitir overflow en flex items */
 }
 
 .task-name-cell:hover {
     color: #007bff;
+}
+
+.task-name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
 }
 
 .expand-icon {
@@ -902,6 +927,94 @@ body.dragging {
 
 .about-link span:last-child {
     font-weight: 500;
+}
+
+/* Help Modal */
+.help-modal-content {
+    max-width: 800px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.help-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #28a745;
+    padding-bottom: 15px;
+}
+
+.help-header h2 {
+    color: #28a745;
+    font-size: 1.8rem;
+    margin: 0 0 8px 0;
+}
+
+.help-header p {
+    color: #6c757d;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.help-body {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.help-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border-left: 4px solid #28a745;
+}
+
+.help-section h3 {
+    color: #28a745;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-section h4 {
+    color: #495057;
+    font-size: 1.1rem;
+    margin: 15px 0 10px 0;
+    font-weight: 600;
+}
+
+.help-section p {
+    margin: 8px 0;
+    line-height: 1.6;
+    color: #495057;
+}
+
+.help-section ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.help-section li {
+    margin: 8px 0;
+    line-height: 1.6;
+    color: #495057;
+}
+
+.help-section strong {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.help-close {
+    color: #28a745;
+    font-size: 28px;
+}
+
+.help-close:hover {
+    color: #1e7e34;
+    transform: scale(1.1);
 }
 
 /* Responsive */

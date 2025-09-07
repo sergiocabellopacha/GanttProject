@@ -30,11 +30,14 @@
                     </div>
                 </div>
                 <div class="toolbar-right">
+                    <div class="toolbar-section help-actions">
+                        <button id="help-btn" class="btn btn-help">Help</button>
+                        <button id="about-btn" class="btn btn-info">About</button>
+                    </div>
                     <div class="toolbar-section zoom-actions">
                         <button id="zoom-in" class="btn">Zoom +</button>
                         <button id="zoom-out" class="btn">Zoom -</button>
                         <button id="zoom-fit" class="btn">Ajustar</button>
-                        <button id="about-btn" class="btn btn-info">About</button>
                     </div>
                 </div>
             </div>
@@ -111,6 +114,141 @@
                     <button type="button" id="cancel-task" class="btn">Cancelar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal">
+        <div class="modal-content help-modal-content">
+            <span class="close help-close">&times;</span>
+            <div class="help-header">
+                <h2>📖 Guía de Uso - ProjectFlow</h2>
+                <p>Aprende a usar todas las funcionalidades de esta aplicación de gestión de proyectos</p>
+            </div>
+            <div class="help-body">
+                <div class="help-section">
+                    <h3>🚀 Primeros Pasos</h3>
+                    <ul>
+                        <li><strong>Crear Nueva Tarea:</strong> Haz clic en el botón "+ Añadir" para crear una nueva tarea</li>
+                        <li><strong>Editar Tarea:</strong> Haz clic en cualquier nombre de tarea en la tabla para editarla</li>
+                        <li><strong>Eliminar Tarea:</strong> Edita la tarea y haz clic en "Eliminar"</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>📊 Gestión de Tareas</h3>
+                    <h4>Tipos de Tareas:</h4>
+                    <ul>
+                        <li><strong>Tarea Individual:</strong> Una tarea específica con fechas de inicio y fin</li>
+                        <li><strong>Grupo:</strong> Contenedor que agrupa varias tareas relacionadas</li>
+                    </ul>
+                    <h4>Campos de Tarea:</h4>
+                    <ul>
+                        <li><strong>Nombre:</strong> Descripción de la tarea</li>
+                        <li><strong>Fechas:</strong> Solo se permiten días laborables (lunes a viernes)</li>
+                        <li><strong>Progreso:</strong> Porcentaje de completado (0-100%)</li>
+                        <li><strong>Recursos:</strong> Persona o equipo asignado</li>
+                        <li><strong>Dependencias:</strong> IDs de tareas que deben completarse primero</li>
+                        <li><strong>Color:</strong> Color visual para identificar la tarea en el gráfico</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>🏗️ Grupos y Jerarquías</h3>
+                    <ul>
+                        <li><strong>Crear Grupo:</strong> Selecciona "Grupo" en el tipo de tarea</li>
+                        <li><strong>Asignar a Grupo:</strong> En "Grupo Padre" selecciona el grupo contenedor</li>
+                        <li><strong>Expandir/Colapsar:</strong> Haz clic en los iconos ▶/▼ junto a los grupos</li>
+                        <li><strong>Fechas Automáticas:</strong> Los grupos calculan automáticamente sus fechas basándose en las tareas hijas</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>🎯 Gráfico de Gantt Interactivo</h3>
+                    <h4>Arrastrar y Soltar:</h4>
+                    <ul>
+                        <li><strong>Mover Tarea:</strong> Arrastra desde el centro de la barra para mover toda la tarea</li>
+                        <li><strong>Cambiar Inicio:</strong> Arrastra desde el borde izquierdo para cambiar fecha de inicio</li>
+                        <li><strong>Cambiar Fin:</strong> Arrastra desde el borde derecho para cambiar fecha de fin</li>
+                        <li><strong>Doble Clic:</strong> Doble clic en una barra para editar la tarea</li>
+                    </ul>
+                    <h4>Elementos Visuales:</h4>
+                    <ul>
+                        <li><strong>Barras de Tarea:</strong> Representan la duración de cada tarea</li>
+                        <li><strong>Barras de Progreso:</strong> Área azul dentro de la barra que indica el avance</li>
+                        <li><strong>Líneas de Dependencia:</strong> Flechas que conectan tareas dependientes</li>
+                        <li><strong>Días de Fin de Semana:</strong> Columnas sombreadas para sábados y domingos</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>🔄 Dependencias</h3>
+                    <ul>
+                        <li><strong>Crear Dependencia:</strong> En el campo "Dependencias" escribe los IDs de las tareas precedentes separados por comas</li>
+                        <li><strong>Ejemplo:</strong> "1, 3, 5" significa que esta tarea depende de las tareas 1, 3 y 5</li>
+                        <li><strong>Visualización:</strong> Se muestran como líneas con flechas conectando las tareas</li>
+                        <li><strong>Colores:</strong> Las líneas usan el color de la tarea de origen</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>🔍 Controles de Zoom y Vista</h3>
+                    <ul>
+                        <li><strong>Zoom +:</strong> Amplía la vista para ver más detalles</li>
+                        <li><strong>Zoom -:</strong> Reduce la vista para ver más tiempo</li>
+                        <li><strong>Ajustar:</strong> Ajusta automáticamente el zoom para mostrar todo el proyecto</li>
+                        <li><strong>Expandir Todo:</strong> Muestra todas las tareas dentro de los grupos</li>
+                        <li><strong>Colapsar Todo:</strong> Oculta las tareas dentro de los grupos</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>💾 Guardar y Cargar Proyectos</h3>
+                    <h4>Formato JSON (Recomendado):</h4>
+                    <ul>
+                        <li><strong>Guardar:</strong> Exporta todo el proyecto con formato completo</li>
+                        <li><strong>Abrir:</strong> Carga un proyecto previamente guardado</li>
+                        <li><strong>Ventajas:</strong> Preserva toda la información: colores, dependencias, jerarquías</li>
+                    </ul>
+                    <h4>Formato CSV (Compatibilidad):</h4>
+                    <ul>
+                        <li><strong>Guardar CSV:</strong> Exporta como hoja de cálculo</li>
+                        <li><strong>Abrir CSV:</strong> Importa desde Excel u otras aplicaciones</li>
+                        <li><strong>Formato:</strong> ID, Nombre, Inicio, Fin, Progreso, Dependencias, Recursos, Color, Es Grupo, Grupo Padre</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>⚡ Consejos y Trucos</h3>
+                    <ul>
+                        <li><strong>Días Laborables:</strong> El sistema automáticamente excluye fines de semana</li>
+                        <li><strong>Colores Personalizados:</strong> Haz clic en el indicador de color en la tabla para cambiar colores rápidamente</li>
+                        <li><strong>Progreso Visual:</strong> La barra azul dentro de cada tarea muestra el progreso actual</li>
+                        <li><strong>Fechas de Grupos:</strong> Se actualizan automáticamente basándose en las tareas hijas</li>
+                        <li><strong>Validación:</strong> El sistema previene fechas inválidas y dependencias circulares</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>🎨 Personalización</h3>
+                    <ul>
+                        <li><strong>Cambiar Colores:</strong> Cada tarea puede tener su propio color identificativo</li>
+                        <li><strong>Organización:</strong> Usa grupos para organizar tareas por fase, departamento o tipo</li>
+                        <li><strong>Recursos:</strong> Asigna responsables para un mejor seguimiento</li>
+                        <li><strong>Timeline Flexible:</strong> La vista se ajusta automáticamente al rango de fechas del proyecto</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>❗ Solución de Problemas</h3>
+                    <ul>
+                        <li><strong>Tarea no se mueve:</strong> Asegúrate de no estar arrastrando un grupo</li>
+                        <li><strong>Fecha inválida:</strong> Verifica que no sea fin de semana</li>
+                        <li><strong>Dependencia no aparece:</strong> Confirma que los IDs de dependencia existan</li>
+                        <li><strong>Proyecto no carga:</strong> Verifica que el archivo JSON tenga el formato correcto</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 

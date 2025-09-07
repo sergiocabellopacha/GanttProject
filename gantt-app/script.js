@@ -1,24 +1,14 @@
 // Gantt Data Structure - Professional Format
 let ganttData = {
     tasks: [
-        { id: 1, name: "Planificación del Proyecto", start: "2025-09-01", end: "2025-09-05", progress: 100, dependencies: [], resources: "Project Manager", color: "#007bff", group: true },
-        { id: 2, name: "Análisis de Requisitos", start: "2025-09-01", end: "2025-09-03", progress: 100, dependencies: [], resources: "Business Analyst", color: "#28a745", group: false, parent: 1 },
-        { id: 3, name: "Diseño de Arquitectura", start: "2025-09-04", end: "2025-09-05", progress: 80, dependencies: [2], resources: "Tech Lead", color: "#28a745", group: false, parent: 1 },
+        { id: 1, name: "Esto es un Grupo de tareas", start: "2025-09-01", end: "2025-09-08", progress: 100, dependencies: [], resources: "Project Manager", color: "#007bff", group: true },
+        { id: 2, name: "Esto es una tarea", start: "2025-09-01", end: "2025-09-08", progress: 100, dependencies: [], resources: "Business Analyst", color: "#28a745", group: false, parent: 1 },
+        { id: 3, name: "Esto es otra tarea", start: "2025-09-04", end: "2025-09-08", progress: 80, dependencies: [2], resources: "Tech Lead", color: "#28a745", group: false, parent: 1 },
         
-        { id: 4, name: "Desarrollo Frontend", start: "2025-09-06", end: "2025-09-20", progress: 60, dependencies: [3], resources: "Frontend Team", color: "#ffc107", group: true },
-        { id: 5, name: "Diseño UI/UX", start: "2025-09-06", end: "2025-09-10", progress: 90, dependencies: [3], resources: "UI Designer", color: "#17a2b8", group: false, parent: 4 },
-        { id: 6, name: "Implementación Componentes", start: "2025-09-11", end: "2025-09-18", progress: 50, dependencies: [5], resources: "Frontend Dev", color: "#17a2b8", group: false, parent: 4 },
-        { id: 7, name: "Testing Frontend", start: "2025-09-19", end: "2025-09-20", progress: 0, dependencies: [6], resources: "QA Tester", color: "#17a2b8", group: false, parent: 4 },
-        
-        { id: 8, name: "Desarrollo Backend", start: "2025-09-08", end: "2025-09-22", progress: 40, dependencies: [3], resources: "Backend Team", color: "#dc3545", group: true },
-        { id: 9, name: "API Development", start: "2025-09-08", end: "2025-09-16", progress: 70, dependencies: [3], resources: "Backend Dev", color: "#6f42c1", group: false, parent: 8 },
-        { id: 10, name: "Database Setup", start: "2025-09-08", end: "2025-09-12", progress: 100, dependencies: [3], resources: "DBA", color: "#6f42c1", group: false, parent: 8 },
-        { id: 11, name: "Integration Testing", start: "2025-09-17", end: "2025-09-22", progress: 0, dependencies: [9, 10], resources: "QA Team", color: "#6f42c1", group: false, parent: 8 },
-        
-        { id: 12, name: "Deployment", start: "2025-09-23", end: "2025-09-25", progress: 0, dependencies: [7, 11], resources: "DevOps", color: "#20c997", group: false },
-        { id: 13, name: "Bug Fix Critical", start: "2025-09-15", end: "2025-09-16", progress: 100, dependencies: [9], resources: "Dev Team", color: "#fd7e14", group: false },
-        { id: 14, name: "Security Review", start: "2025-09-10", end: "2025-09-14", progress: 50, dependencies: [10], resources: "Security Team", color: "#e83e8c", group: false }
-    ]
+        { id: 4, name: "Puedes guardar en JSON y CSV", start: "2025-09-06", end: "2025-09-30", progress: 60, dependencies: [3], resources: "Frontend Team", color: "#ffc107", group: true },
+        { id: 5, name: "Y despues puedes cargarlo", start: "2025-09-06", end: "2025-09-12", progress: 90, dependencies: [3], resources: "UI Designer", color: "#17a2b8", group: false, parent: 4 },
+        { id: 6, name: "La aplicación no mantiene nada en memoria", start: "2025-09-11", end: "2025-09-22", progress: 50, dependencies: [5], resources: "Frontend Dev", color: "#17a2b8", group: false, parent: 4 },
+        { id: 7, name: "Usa los botones de la cabecera", start: "2025-09-19", end: "2025-09-30", progress: 0, dependencies: [6], resources: "QA Tester", color: "#17a2b8", group: false, parent: 4 }]
 };
 
 let zoomLevel = 1; // 1 = days, 2 = weeks, 3 = months
@@ -253,9 +243,9 @@ function renderTaskTable() {
         
         html += `
             <div class="task-row ${isGroup ? 'group-row' : ''}" data-task-id="${task.id}" ${dataParent} style="${parentCollapsed ? 'display: none;' : ''}">
-                <div class="task-cell task-name-cell" onclick="editTask(${task.id})">
+                <div class="task-cell task-name-cell" onclick="editTask(${task.id})" title="${task.name}">
                     ${isGroup ? `<span class="expand-icon ${isCollapsed ? 'collapsed' : ''}" onclick="toggleGroup(${task.id}); event.stopPropagation();">${expandIcon}</span>` : ''}
-                    ${indent}${task.name}
+                    <span class="task-name-text">${indent}${task.name}</span>
                     ${isGroup ? ' <small>(Grupo)</small>' : ''}
                     ${hasParent ? ' <small>(Subtarea)</small>' : ''}
                 </div>
@@ -1627,7 +1617,27 @@ window.onclick = function(event) {
     if (event.target === aboutModal) {
         aboutModal.style.display = 'none';
     }
+    if (event.target === helpModal) {
+        helpModal.style.display = 'none';
+    }
 };
+
+// Help modal controls
+const helpBtn = document.getElementById('help-btn');
+const helpModal = document.getElementById('help-modal');
+const helpClose = document.querySelector('.help-close');
+
+if (helpBtn) {
+    helpBtn.onclick = () => {
+        helpModal.style.display = 'block';
+    };
+}
+
+if (helpClose) {
+    helpClose.onclick = () => {
+        helpModal.style.display = 'none';
+    };
+}
 
 // Modal close on outside click - DISABLED
 // The modal should only close when clicking specific buttons (Save, Delete, Cancel, X)
