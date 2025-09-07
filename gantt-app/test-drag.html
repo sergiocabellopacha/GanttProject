@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Gantt Drag</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+        }
+        .test-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        #chart-body {
+            border: 1px solid #ddd;
+            position: relative;
+            height: 200px;
+            width: 800px;
+            overflow: hidden;
+        }
+        .task-bar {
+            position: absolute;
+            height: 36px;
+            top: 10px;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 12px;
+            cursor: move;
+            user-select: none;
+        }
+        .task-bar.dragging {
+            z-index: 1000;
+            opacity: 0.9;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de Funcionalidad de Arrastre</h1>
+    
+    <div class="test-container">
+        <h3>Instrucciones:</h3>
+        <ul>
+            <li>Haz clic en el medio de la barra azul para moverla</li>
+            <li>Haz clic en los primeros 10px para cambiar fecha de inicio</li>
+            <li>Haz clic en los últimos 10px para cambiar fecha de fin</li>
+        </ul>
+    </div>
+    
+    <div class="test-container">
+        <div id="chart-body">
+            <div class="task-bar draggable-task" data-task-id="1" style="left: 100px; width: 200px;">
+                Tarea de Prueba
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>Estado:</h3>
+        <div id="status">Posición inicial: left: 100px, width: 200px</div>
+    </div>
+
+    <script>
+        // Variables globales simplificadas para la prueba
+        let isDragging = false;
+        let dragType = null;
+        let dragStartX = 0;
+        let dragElement = null;
+        let originalLeft = 0;
+        let originalWidth = 0;
+
+        function getTaskBarZone(event, taskBar) {
+            const rect = taskBar.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const width = rect.width;
+            
+            if (x <= 10) return 'resize-start';
+            if (x >= width - 10) return 'resize-end';
+            return 'move';
+        }
+
+        function setupDragAndDrop() {
+            const taskBars = document.querySelectorAll('.draggable-task');
+            
+            taskBars.forEach(taskBar => {
+                taskBar.addEventListener('mousedown', handleTaskMouseDown);
+            });
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleTaskMouseDown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const taskBar = event.currentTarget;
+            const zone = getTaskBarZone(event, taskBar);
+            
+            isDragging = true;
+            dragType = zone;
+            dragStartX = event.clientX;
+            dragElement = taskBar;
+            
+            const currentStyle = window.getComputedStyle(taskBar);
+            originalLeft = parseInt(currentStyle.left);
+            originalWidth = parseInt(currentStyle.width);
+            
+            document.body.style.cursor = zone === 'move' ? 'move' : 'col-resize';
+            taskBar.classList.add('dragging');
+            
+            updateStatus(`Iniciando arrastre: ${zone}, posición inicial: ${originalLeft}px, ancho: ${originalWidth}px`);
+        }
+
+        function handleMouseMove(event) {
+            if (!isDragging) {
+                const taskBar = event.target.closest('.draggable-task');
+                if (taskBar) {
+                    const zone = getTaskBarZone(event, taskBar);
+                    taskBar.style.cursor = zone === 'move' ? 'move' : 'col-resize';
+                }
+                return;
+            }
+            
+            event.preventDefault();
+            
+            const deltaX = event.clientX - dragStartX;
+            let newLeft = originalLeft;
+            let newWidth = originalWidth;
+            
+            switch (dragType) {
+                case 'move':
+                    newLeft = Math.max(0, originalLeft + deltaX);
+                    break;
+                    
+                case 'resize-start':
+                    newLeft = Math.max(0, originalLeft + deltaX);
+                    newWidth = Math.max(50, originalWidth - deltaX);
+                    break;
+                    
+                case 'resize-end':
+                    newWidth = Math.max(50, originalWidth + deltaX);
+                    break;
+            }
+            
+            dragElement.style.left = newLeft + 'px';
+            dragElement.style.width = newWidth + 'px';
+            
+            updateStatus(`Arrastrando: ${dragType}, left: ${newLeft}px, width: ${newWidth}px, deltaX: ${deltaX}px`);
+        }
+
+        function handleMouseUp(event) {
+            if (!isDragging) return;
+            
+            isDragging = false;
+            document.body.style.cursor = '';
+            
+            if (dragElement) {
+                dragElement.classList.remove('dragging');
+                const finalLeft = parseInt(dragElement.style.left);
+                const finalWidth = parseInt(dragElement.style.width);
+                updateStatus(`Arrastre completado: left: ${finalLeft}px, width: ${finalWidth}px`);
+            }
+            
+            dragType = null;
+            dragElement = null;
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        // Inicializar cuando la página carga
+        document.addEventListener('DOMContentLoaded', setupDragAndDrop);
+    </script>
+</body>
+</html>

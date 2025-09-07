@@ -28,6 +28,15 @@ let isCreatingNewTask = false; // Para diferenciar entre crear y editar
 let nextTaskId = 15;
 let collapsedGroups = new Set(); // Para rastrear grupos colapsados
 
+// Variables for drag and drop functionality
+window.isDragging = false;
+window.dragType = null; // 'move', 'resize-start', 'resize-end'
+window.dragTaskId = null;
+window.dragStartX = 0;
+window.dragOriginalStart = null;
+window.dragOriginalEnd = null;
+window.dragElement = null;
+
 // Date utilities
 function parseDate(dateStr) {
     return new Date(dateStr);
@@ -47,6 +56,30 @@ function getDaysDifference(start, end) {
     const startDate = parseDate(start);
     const endDate = parseDate(end);
     return Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+// Utility functions for drag and drop
+function pixelsToDate(pixels, dateRange) {
+    const daysSinceStart = Math.round(pixels / dayWidth);
+    return formatDate(addDays(dateRange.start, daysSinceStart));
+}
+
+function dateToPixels(date, dateRange) {
+    const daysSinceStart = getDaysDifference(formatDate(dateRange.start), date) - 1;
+    return Math.max(0, daysSinceStart * dayWidth);
+}
+
+function getTaskBarZone(event, taskBar) {
+    const rect = taskBar.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const width = rect.width;
+    
+    // Usar un área de detección más grande para mejor UX
+    const edgeSize = Math.min(15, width * 0.2); // 15px o 20% del ancho, lo que sea menor
+    
+    if (x <= edgeSize) return 'resize-start';
+    if (x >= width - edgeSize) return 'resize-end';
+    return 'move';
 }
 
 function getProjectDateRange() {
@@ -238,7 +271,7 @@ function renderChart() {
             <div class="chart-row ${isGroup ? 'group-row' : ''}" style="height: 40px;">
                 ${isGroup ? 
                     `<div class="group-bar" style="left: ${left}px; width: ${width}px; background: ${task.color} !important;">${task.name}</div>` :
-                    `<div class="task-bar" style="left: ${left}px; width: ${width}px; background-color: ${task.color};" onclick="editTask(${task.id})" title="${task.name}">
+                    `<div class="task-bar draggable-task" data-task-id="${task.id}" style="left: ${left}px; width: ${width}px; background-color: ${task.color};" title="${task.name}">
                         <div class="progress-bar" style="width: ${task.progress}%;"></div>
                         <span>${task.name}</span>
                     </div>`
@@ -328,6 +361,402 @@ function renderChart() {
     chartBody.style.width = totalWidth + 'px';
     chartBody.style.minWidth = totalWidth + 'px';
     chartBody.style.maxWidth = totalWidth + 'px';
+    
+    // Agregar event listeners para arrastre después de renderizar
+    setupDragAndDrop();
+}
+
+// Drag and Drop functionality
+function setupDragAndDrop() {
+    const chartBody = document.getElementById('chart-body');
+    const taskBars = chartBody.querySelectorAll('.draggable-task');
+    
+    taskBars.forEach(taskBar => {
+        taskBar.addEventListener('mousedown', handleTaskMouseDown);
+        taskBar.addEventListener('dblclick', handleTaskDoubleClick);
+    });
+    
+    // Global mouse events
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+}
+
+function handleTaskMouseDown(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const taskBar = event.currentTarget || event.target;
+    
+    // Buscar el elemento con data-task-id si no es el target directo
+    let taskElement = taskBar;
+    while (taskElement && !taskElement.dataset.taskId) {
+        taskElement = taskElement.parentElement;
+    }
+    
+    if (!taskElement || !taskElement.dataset.taskId) return;
+    
+    const taskId = parseInt(taskElement.dataset.taskId);
+    const task = ganttData.tasks.find(t => t.id === taskId);
+    
+    if (!task || task.group) return; // No permitir arrastrar grupos
+    
+    const zone = getTaskBarZone(event, taskElement);
+    
+    window.isDragging = true;
+    window.dragType = zone;
+    window.dragTaskId = taskId;
+    window.dragStartX = event.clientX;
+    window.dragOriginalStart = task.start;
+    window.dragOriginalEnd = task.end;
+    window.dragElement = taskElement;
+    
+    // Cambiar cursor según la zona
+    document.body.style.cursor = zone === 'move' ? 'move' : 'col-resize';
+    document.body.classList.add('dragging');
+    
+    // Agregar clase visual para indicar arrastre
+    taskBar.classList.add('dragging');
+}
+
+function handleTaskDoubleClick(event) {
+    event.stopPropagation();
+    const taskId = parseInt(event.currentTarget.dataset.taskId);
+    editTask(taskId);
+}
+
+function handleMouseMove(event) {
+    if (!window.isDragging) {
+        // Cambiar cursor según la zona cuando se hace hover
+        if (event.target && typeof event.target.closest === 'function') {
+            const taskBar = event.target.closest('.draggable-task');
+            if (taskBar && !taskBar.closest('.group-row')) {
+                const zone = getTaskBarZone(event, taskBar);
+                taskBar.style.cursor = zone === 'move' ? 'move' : 'col-resize';
+            }
+        }
+        return;
+    }
+    
+    event.preventDefault();
+    
+    const deltaX = event.clientX - window.dragStartX;
+    const deltaDays = Math.round(deltaX / dayWidth);
+    
+    const task = ganttData.tasks.find(t => t.id === window.dragTaskId);
+    if (!task) return;
+    
+    const dateRange = getProjectDateRange();
+    let newStart, newEnd;
+    
+    switch (window.dragType) {
+        case 'move':
+            // Mover toda la tarea manteniendo la duración
+            newStart = formatDate(addDays(parseDate(window.dragOriginalStart), deltaDays));
+            newEnd = formatDate(addDays(parseDate(window.dragOriginalEnd), deltaDays));
+            break;
+            
+        case 'resize-start':
+            // Cambiar fecha de inicio
+            newStart = formatDate(addDays(parseDate(window.dragOriginalStart), deltaDays));
+            newEnd = window.dragOriginalEnd;
+            
+            // Validar que la fecha de inicio no sea posterior a la de fin
+            if (parseDate(newStart) >= parseDate(newEnd)) {
+                newStart = formatDate(addDays(parseDate(newEnd), -1));
+            }
+            break;
+            
+        case 'resize-end':
+            // Cambiar fecha de fin
+            newStart = window.dragOriginalStart;
+            newEnd = formatDate(addDays(parseDate(window.dragOriginalEnd), deltaDays));
+            
+            // Validar que la fecha de fin no sea anterior a la de inicio
+            if (parseDate(newEnd) <= parseDate(newStart)) {
+                newEnd = formatDate(addDays(parseDate(newStart), 1));
+            }
+            break;
+    }
+    
+    // Crear una copia del objeto task para el preview sin modificar el original
+    const previewTask = {
+        ...task,
+        start: newStart,
+        end: newEnd
+    };
+    
+    // Mostrar preview visual durante el arrastre usando la copia
+    updateTaskBarVisual(window.dragElement, previewTask, dateRange);
+}
+
+function handleMouseUp(event) {
+    if (!window.isDragging) return;
+    
+    document.body.style.cursor = '';
+    document.body.classList.remove('dragging');
+    
+    // Limpiar cualquier preview visual de TODAS las filas del chart
+    const chartBody = document.getElementById('chart-body');
+    if (chartBody) {
+        const allPreviews = chartBody.querySelectorAll('.task-preview');
+        allPreviews.forEach(preview => preview.remove());
+    }
+    
+    // Limpiar clase dragging del elemento
+    if (window.dragElement) {
+        window.dragElement.classList.remove('dragging');
+    }
+    
+    // Aplicar los cambios finales a la tarea
+    const task = ganttData.tasks.find(t => t.id === window.dragTaskId);
+    if (task) {
+        const deltaX = event.clientX - window.dragStartX;
+        const deltaDays = Math.round(deltaX / dayWidth);
+        
+        switch (window.dragType) {
+            case 'move':
+                task.start = formatDate(addDays(parseDate(window.dragOriginalStart), deltaDays));
+                task.end = formatDate(addDays(parseDate(window.dragOriginalEnd), deltaDays));
+                break;
+                
+            case 'resize-start':
+                let newStart = formatDate(addDays(parseDate(window.dragOriginalStart), deltaDays));
+                // Validar que la fecha de inicio no sea posterior a la de fin
+                if (parseDate(newStart) >= parseDate(task.end)) {
+                    newStart = formatDate(addDays(parseDate(task.end), -1));
+                }
+                task.start = newStart;
+                break;
+                
+            case 'resize-end':
+                let newEnd = formatDate(addDays(parseDate(window.dragOriginalEnd), deltaDays));
+                // Validar que la fecha de fin no sea anterior a la de inicio
+                if (parseDate(newEnd) <= parseDate(task.start)) {
+                    newEnd = formatDate(addDays(parseDate(task.start), 1));
+                }
+                task.end = newEnd;
+                break;
+        }
+        
+        // Actualizar fechas de grupos si la tarea modificada tiene padre
+        if (task.parent) {
+            updateGroupDates(task.parent);
+        }
+    }
+    
+    // Forzar un re-renderizado completo para asegurar que todo se actualiza correctamente
+    renderAll();
+    
+    // Limpiar variables
+    window.isDragging = false;
+    window.dragType = null;
+    window.dragTaskId = null;
+    window.dragStartX = 0;
+    window.dragOriginalStart = null;
+    window.dragOriginalEnd = null;
+    window.dragElement = null;
+}
+
+function updateTaskBarVisual(taskBar, task, dateRange) {
+    // Durante el arrastre, crear un preview visual en lugar de modificar la barra original
+    if (window.isDragging) {
+        // Remover TODOS los previews anteriores del chart-row y del taskBar
+        const parentChartRow = taskBar.closest('.chart-row');
+        if (parentChartRow) {
+            const allPreviews = parentChartRow.querySelectorAll('.task-preview');
+            allPreviews.forEach(preview => preview.remove());
+        }
+        
+        // También remover cualquier preview del taskBar directamente
+        const taskBarPreviews = taskBar.querySelectorAll('.task-preview');
+        taskBarPreviews.forEach(preview => preview.remove());
+        
+        // Obtener el rango actual del proyecto
+        const currentRange = getProjectDateRange();
+        
+        // Expandir el rango si la nueva fecha está fuera del rango actual
+        let effectiveStartDate = currentRange.start;
+        let effectiveEndDate = currentRange.end;
+        
+        const newTaskStart = parseDate(task.start);
+        const newTaskEnd = parseDate(task.end);
+        
+        if (newTaskStart < effectiveStartDate) {
+            effectiveStartDate = newTaskStart;
+        }
+        if (newTaskEnd > effectiveEndDate) {
+            effectiveEndDate = newTaskEnd;
+        }
+        
+        // Calcular posición basada en el rango efectivo
+        const startOffset = Math.max(0, getDaysDifference(formatDate(effectiveStartDate), task.start) - 1);
+        const duration = getDaysDifference(task.start, task.end);
+        const left = startOffset * dayWidth;
+        const width = Math.max(dayWidth, duration * dayWidth);
+        
+        // Log para debug
+        console.log("Creating preview:", {
+            taskName: task.name,
+            start: task.start,
+            end: task.end,
+            left: left,
+            width: width,
+            startOffset: startOffset,
+            duration: duration,
+            dayWidth: dayWidth
+        });
+        
+        // Crear elemento preview
+        const preview = document.createElement('div');
+        preview.className = 'task-preview';
+        
+        // Usar cssText para establecer todos los estilos de una vez
+        preview.style.cssText = `
+            position: absolute;
+            left: ${left}px;
+            width: ${width}px;
+            height: 34px;
+            background-color: rgba(0, 123, 255, 0.4);
+            border: 2px dashed #007bff;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 1000;
+            top: 3px;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.6);
+            opacity: 0.9;
+        `;
+        
+        // Añadir información visual como fecha y nombre
+        const infoElement = document.createElement('div');
+        infoElement.style.cssText = `
+            position: absolute;
+            top: -25px;
+            left: 0;
+            white-space: nowrap;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 1001;
+        `;
+        infoElement.textContent = `${task.name}: ${task.start} - ${task.end}`;
+        preview.appendChild(infoElement);
+        
+        // Encontrar el contenedor correcto para el preview
+        const chartRow = parentChartRow;
+        if (chartRow) {
+            // Asegurar que el contenedor tenga posición relativa
+            if (getComputedStyle(chartRow).position === 'static') {
+                chartRow.style.position = 'relative';
+            }
+            chartRow.appendChild(preview);
+            
+            // Forzar un reflow
+            preview.offsetHeight;
+        } else {
+            console.warn("No se encontró el chart-row para el preview");
+        }
+        
+    } else {
+        // No estamos arrastrando, actualizar la barra normalmente
+        const currentRange = getProjectDateRange();
+        
+        // Expandir el rango si la nueva fecha está fuera del rango actual
+        let effectiveStartDate = currentRange.start;
+        let effectiveEndDate = currentRange.end;
+        
+        const newTaskStart = parseDate(task.start);
+        const newTaskEnd = parseDate(task.end);
+        
+        if (newTaskStart < effectiveStartDate) {
+            effectiveStartDate = newTaskStart;
+        }
+        if (newTaskEnd > effectiveEndDate) {
+            effectiveEndDate = newTaskEnd;
+        }
+        
+        // Calcular posición basada en el rango efectivo
+        const startOffset = Math.max(0, getDaysDifference(formatDate(effectiveStartDate), task.start) - 1);
+        const duration = getDaysDifference(task.start, task.end);
+        const left = startOffset * dayWidth;
+        const width = Math.max(dayWidth, duration * dayWidth);
+        
+        // Actualizar visualmente la barra
+        taskBar.style.left = left + 'px';
+        taskBar.style.width = width + 'px';
+    }
+}
+
+function updateDependencyLines() {
+    // Re-renderizar solo las líneas SVG sin tocar las barras de tareas
+    const svg = document.querySelector('.gantt-svg');
+    if (!svg) return;
+    
+    const dateRange = getProjectDateRange();
+    const orderedTasks = getOrderedTasks();
+    let svgContent = '';
+    
+    orderedTasks.forEach((task, index) => {
+        const hasParent = task.parent;
+        const parentCollapsed = hasParent && collapsedGroups.has(task.parent);
+        
+        if (parentCollapsed || task.group) return;
+        
+        if (task.dependencies.length > 0) {
+            task.dependencies.forEach(depId => {
+                const depTask = ganttData.tasks.find(t => t.id === depId);
+                if (depTask) {
+                    const visibleOrderedTasks = orderedTasks.filter(t => {
+                        const hasParent = t.parent;
+                        const parentCollapsed = hasParent && collapsedGroups.has(t.parent);
+                        return !parentCollapsed;
+                    });
+                    
+                    const depIndex = visibleOrderedTasks.indexOf(depTask);
+                    const taskIndex = visibleOrderedTasks.indexOf(task);
+                    
+                    if (depIndex >= 0 && taskIndex >= 0) {
+                        const depStartOffset = Math.max(0, getDaysDifference(formatDate(dateRange.start), depTask.start) - 1);
+                        const depDuration = getDaysDifference(depTask.start, depTask.end);
+                        const taskStartOffset = Math.max(0, getDaysDifference(formatDate(dateRange.start), task.start) - 1);
+                        
+                        const fromX = (depStartOffset + depDuration) * dayWidth;
+                        const fromY = (depIndex + 0.5) * 40;
+                        const toX = taskStartOffset * dayWidth;
+                        const toY = (taskIndex + 0.5) * 40;
+                        
+                        let pathD = '';
+                        const verticalGap = 20;
+                        const horizontalGap = 20;
+                        
+                        if (fromX < toX) {
+                            const midX = fromX + (toX - fromX) / 2;
+                            pathD = `M ${fromX} ${fromY} L ${midX} ${fromY} L ${midX} ${toY} L ${toX} ${toY}`;
+                        } else {
+                            const curveX1 = fromX + horizontalGap;
+                            const curveX2 = toX - horizontalGap;
+                            const curveY = toY - verticalGap;
+                            
+                            pathD = `M ${fromX} ${fromY} L ${curveX1} ${fromY} L ${curveX1} ${curveY} L ${curveX2} ${curveY} L ${curveX2} ${toY} L ${toX} ${toY}`;
+                        }
+                        
+                        svgContent += `<path d="${pathD}" class="dependency-line" />`;
+                    }
+                }
+            });
+        }
+    });
+    
+    // Actualizar solo el contenido de paths del SVG
+    const paths = svg.querySelectorAll('path.dependency-line');
+    paths.forEach(path => path.remove());
+    
+    if (svgContent) {
+        svg.insertAdjacentHTML('beforeend', svgContent);
+    }
 }
 
 // Task management functions
@@ -652,6 +1081,9 @@ function renderAll() {
                 daysRow.style.minWidth = exactWidth + 'px';
             }
         }
+        
+        // Configurar drag and drop después de renderizar
+        setupDragAndDrop();
         
     } catch (error) {
         console.error('Error rendering Gantt:', error);
