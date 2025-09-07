@@ -280,7 +280,7 @@ function renderChart() {
                         const verticalGap = 20; // Separación vertical para la curva
                         const horizontalGap = 20; // Separación horizontal para la curva
                         
-                        if (fromX <= toX) {
+                        if (fromX < toX) {
                             // Caso normal: la dependencia está a la izquierda o misma posición
                             const midX = fromX + (toX - fromX) / 2;
                             pathD = `M ${fromX} ${fromY} L ${midX} ${fromY} L ${midX} ${toY} L ${toX} ${toY}`;
