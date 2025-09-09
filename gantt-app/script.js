@@ -5,9 +5,9 @@ let ganttData = {
         { id: 2, name: "Esto es una tarea", start: "2025-09-01", end: "2025-09-08", progress: 100, dependencies: [], resources: "Business Analyst", color: "#28a745", group: false, parent: 1 },
         { id: 3, name: "Esto es otra tarea", start: "2025-09-04", end: "2025-09-08", progress: 80, dependencies: [2], resources: "Tech Lead", color: "#28a745", group: false, parent: 1 },
         
-        { id: 4, name: "Puedes guardar en JSON y CSV", start: "2025-09-06", end: "2025-09-30", progress: 60, dependencies: [3], resources: "Frontend Team", color: "#ffc107", group: true },
-        { id: 5, name: "Y despues puedes cargarlo", start: "2025-09-06", end: "2025-09-12", progress: 90, dependencies: [3], resources: "UI Designer", color: "#17a2b8", group: false, parent: 4 },
-        { id: 6, name: "La aplicación no mantiene nada en memoria", start: "2025-09-11", end: "2025-09-22", progress: 50, dependencies: [5], resources: "Frontend Dev", color: "#17a2b8", group: false, parent: 4 },
+        { id: 4, name: "Puedes guardar en JSON y CSV", start: "2025-09-11", end: "2025-09-30", progress: 60, dependencies: [], resources: "Frontend Team", color: "#ffc107", group: true },
+        { id: 5, name: "Y despues puedes cargarlo", start: "2025-09-11", end: "2025-09-16", progress: 90, dependencies: [3], resources: "UI Designer", color: "#17a2b8", group: false, parent: 4 },
+        { id: 6, name: "La aplicación no mantiene nada en memoria", start: "2025-09-15", end: "2025-09-23", progress: 50, dependencies: [5], resources: "Frontend Dev", color: "#17a2b8", group: false, parent: 4 },
         { id: 7, name: "Usa los botones de la cabecera", start: "2025-09-19", end: "2025-09-30", progress: 0, dependencies: [6], resources: "QA Tester", color: "#17a2b8", group: false, parent: 4 }]
 };
 
@@ -17,6 +17,15 @@ let currentEditingTask = null;
 let isCreatingNewTask = false; // Para diferenciar entre crear y editar
 let nextTaskId = 15;
 let collapsedGroups = new Set(); // Para rastrear grupos colapsados
+
+// Colores por defecto para tipos de tareas
+const DEFAULT_COLORS = {
+    group: '#616161',
+    task: '#17A2B8',
+};
+
+// Rastrear si el usuario ha cambiado manualmente el color
+let userChangedColor = false;
 
 // Variables for drag and drop functionality
 window.isDragging = false;
@@ -261,7 +270,7 @@ function renderTaskTable() {
                     <input type="number" value="${task.progress}" min="0" max="100" style="width: 50px;" onchange="updateTaskField(${task.id}, 'progress', this.value)">
                 </div>
                 <div class="task-cell">${task.dependencies.join(', ')}</div>
-                <div class="task-cell">${task.resources || ''}</div>
+                <div class="task-cell task-resource-cell">${task.resources || ''}</div>
                 <div class="task-cell">
                     <div class="color-indicator" style="background-color: ${task.color}" data-task-id="${task.id}"></div>
                 </div>
@@ -940,6 +949,7 @@ function editTask(taskId) {
     
     currentEditingTask = task;
     isCreatingNewTask = false; // Estamos editando, no creando
+    userChangedColor = false; // Resetear la bandera al abrir el modal
     
     document.getElementById('task-name').value = task.name;
     document.getElementById('task-start').value = task.start;
@@ -995,13 +1005,14 @@ function addNewTask() {
         progress: 0,
         dependencies: [],
         resources: "",
-        color: "#007bff",
+        color: DEFAULT_COLORS.task, // Usar color por defecto para tareas
         group: false
     };
     
     ganttData.tasks.push(newTask);
     currentEditingTask = newTask;
     isCreatingNewTask = true; // Estamos creando una nueva tarea
+    userChangedColor = false; // Resetear la bandera al crear una nueva tarea
     
     // Configurar el formulario con los valores de la nueva tarea
     document.getElementById('task-name').value = newTask.name;
@@ -1033,6 +1044,24 @@ function populateParentDropdown() {
     const parentSelect = document.getElementById('task-parent');
     parentSelect.innerHTML = '<option value="">Ninguno (Raíz)</option>';
     
+    // Verificar si la tarea actual es un grupo
+    const taskType = document.getElementById('task-type').value;
+    const isGroup = taskType === 'group';
+    
+    // Si es un grupo, no mostrar opciones de padre (los grupos no pueden tener padre)
+    if (isGroup) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Los grupos no pueden tener padre';
+        option.disabled = true;
+        parentSelect.appendChild(option);
+        parentSelect.disabled = true;
+        return;
+    }
+    
+    // Para tareas normales, habilitar la selección de padre
+    parentSelect.disabled = false;
+    
     // Obtener solo los grupos (tareas con group: true)
     const groups = ganttData.tasks.filter(task => task.group);
     
@@ -1048,6 +1077,18 @@ function populateParentDropdown() {
 function toggleTaskFields() {
     const taskType = document.getElementById('task-type').value;
     const isGroup = taskType === 'group';
+    const colorInput = document.getElementById('task-color');
+    
+    // Solo cambiar el color si el usuario no lo ha modificado manualmente
+    if (!userChangedColor) {
+        const defaultColor = isGroup ? DEFAULT_COLORS.group : DEFAULT_COLORS.task;
+        colorInput.value = defaultColor;
+        
+        // Actualizar el color en el objeto actual si estamos editando
+        if (currentEditingTask) {
+            currentEditingTask.color = defaultColor;
+        }
+    }
     
     // Los grupos normalmente no tienen fechas específicas tan estrictas
     // pero vamos a mantener todos los campos disponibles
@@ -1066,6 +1107,20 @@ function toggleTaskFields() {
         resourcesInput.placeholder = "Equipo o departamento...";
     } else {
         resourcesInput.placeholder = "Asignado a...";
+    }
+    
+    // Actualizar dropdown de padre según el tipo
+    populateParentDropdown();
+    
+    // Limpiar dependencias si es un grupo (los grupos no deben tener dependencias)
+    const dependenciesInput = document.getElementById('task-dependencies');
+    if (isGroup) {
+        dependenciesInput.value = '';
+        dependenciesInput.placeholder = 'Los grupos no tienen dependencias';
+        dependenciesInput.disabled = true;
+    } else {
+        dependenciesInput.placeholder = 'Ej: 1,2,3';
+        dependenciesInput.disabled = false;
     }
 }
 
@@ -1194,26 +1249,92 @@ document.getElementById('task-form').onsubmit = function(e) {
     e.preventDefault();
     
     if (currentEditingTask) {
+        const taskType = document.getElementById('task-type').value;
+        const isGroup = (taskType === 'group');
+        const parentId = document.getElementById('task-parent').value;
+        const dependencies = document.getElementById('task-dependencies').value
+            .split(',')
+            .map(d => parseInt(d.trim()))
+            .filter(d => !isNaN(d));
+        
+        // Validaciones para grupos
+        if (isGroup) {
+            // Regla 1: Un grupo no puede tener un grupo padre
+            if (parentId) {
+                alert('Error: Un grupo no puede tener un grupo padre. Los grupos deben estar en el nivel raíz.');
+                return;
+            }
+            
+            // Regla 2: Un grupo no debe tener dependencias
+            if (dependencies.length > 0) {
+                alert('Error: Un grupo no puede tener dependencias. Solo las tareas individuales pueden depender de otras.');
+                return;
+            }
+            
+            // Verificar si alguna tarea tiene como dependencia a este grupo
+            const tasksWithThisGroupAsDependency = ganttData.tasks.filter(task => 
+                task.dependencies && task.dependencies.includes(currentEditingTask.id)
+            );
+            
+            if (tasksWithThisGroupAsDependency.length > 0) {
+                const taskNames = tasksWithThisGroupAsDependency.map(t => t.name).join(', ');
+                if (!confirm(`Advertencia: Las siguientes tareas dependen de este elemento: ${taskNames}.\n\nAl convertir esto en un grupo, se eliminarán estas dependencias. ¿Desea continuar?`)) {
+                    return;
+                }
+                
+                // Eliminar las dependencias de este elemento de todas las tareas
+                ganttData.tasks.forEach(task => {
+                    if (task.dependencies) {
+                        task.dependencies = task.dependencies.filter(dep => dep !== currentEditingTask.id);
+                    }
+                });
+            }
+        } else {
+            // Validación para tareas: no pueden depender de grupos
+            const invalidDependencies = dependencies.filter(depId => {
+                const depTask = ganttData.tasks.find(t => t.id === depId);
+                return depTask && depTask.group;
+            });
+            
+            if (invalidDependencies.length > 0) {
+                const invalidGroupNames = invalidDependencies.map(depId => {
+                    const group = ganttData.tasks.find(t => t.id === depId);
+                    return `${group.id} - ${group.name}`;
+                }).join(', ');
+                alert(`Error: Una tarea no puede depender de grupos. Los siguientes elementos son grupos: ${invalidGroupNames}.\n\nLas tareas solo pueden depender de otras tareas individuales.`);
+                return;
+            }
+        }
+        
+        // Si estamos convirtiendo una tarea a grupo, verificar si es padre de otras tareas
+        if (isGroup && !currentEditingTask.group) {
+            const childTasks = ganttData.tasks.filter(task => task.parent === currentEditingTask.id);
+            if (childTasks.length === 0) {
+                if (!confirm('Este elemento se convertirá en un grupo vacío. ¿Desea continuar?')) {
+                    return;
+                }
+            }
+        }
+        
+        // Actualizar los datos de la tarea
         currentEditingTask.name = document.getElementById('task-name').value;
         currentEditingTask.start = document.getElementById('task-start').value;
         currentEditingTask.end = document.getElementById('task-end').value;
         currentEditingTask.progress = parseInt(document.getElementById('task-progress').value);
         currentEditingTask.resources = document.getElementById('task-resources').value;
         currentEditingTask.color = document.getElementById('task-color').value;
-        currentEditingTask.dependencies = document.getElementById('task-dependencies').value
-            .split(',')
-            .map(d => parseInt(d.trim()))
-            .filter(d => !isNaN(d));
         
-        // Actualizar tipo y grupo padre
-        const taskType = document.getElementById('task-type').value;
-        currentEditingTask.group = (taskType === 'group');
+        // Asignar dependencias (será array vacío para grupos)
+        currentEditingTask.dependencies = dependencies;
         
-        const parentId = document.getElementById('task-parent').value;
-        if (parentId) {
+        // Actualizar tipo
+        currentEditingTask.group = isGroup;
+        
+        // Actualizar grupo padre solo para tareas (no para grupos)
+        if (!isGroup && parentId) {
             currentEditingTask.parent = parseInt(parentId);
         } else {
-            delete currentEditingTask.parent; // Eliminar la propiedad si no hay padre
+            delete currentEditingTask.parent; // Eliminar la propiedad si no hay padre o es un grupo
         }
         
         // Si se cambió a grupo, actualizar las fechas automáticamente basándose en las tareas hijas
@@ -1278,14 +1399,23 @@ document.getElementById('cancel-task').onclick = function() {
     cancelTask();
 };
 
+// Event listener para cambios en el tipo de tarea
+document.getElementById('task-type').addEventListener('change', function() {
+    toggleTaskFields();
+});
+
 // Event listener para cambios en el color - vista previa en tiempo real
 document.getElementById('task-color').addEventListener('input', function() {
     // Este evento se dispara mientras el usuario está cambiando el color
-    // Útil para vista previa en tiempo real si se desea
+    // Marcar que el usuario ha cambiado el color manualmente
+    userChangedColor = true;
 });
 
 document.getElementById('task-color').addEventListener('change', function() {
     // Este evento se dispara cuando el usuario termina de cambiar el color
+    // Marcar que el usuario ha cambiado el color manualmente
+    userChangedColor = true;
+    
     if (currentEditingTask) {
         currentEditingTask.color = this.value;
         // No renderizar aquí para evitar conflictos, el color se guardará al enviar el formulario

@@ -58,7 +58,7 @@ body {
 .btn-primary {
     background: #007bff;
     color: white;
-    border-color: #007bff;
+    border: 1px solid #ced4da;
 }
 
 .btn-primary:hover {
@@ -179,7 +179,7 @@ body {
 
 .toolbar-integrated .btn-primary {
     background: rgba(0,123,255,0.8);
-    border-color: rgba(0,123,255,0.8);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .toolbar-integrated .btn-primary:hover {
@@ -190,7 +190,7 @@ body {
 /* Gantt Layout */
 .gantt-wrapper {
     display: flex;
-    height: calc(100vh - 120px);
+    min-height: calc(100vh - 120px);
     background: #fff;
 }
 
@@ -217,6 +217,9 @@ body {
     font-size: 12px;
     color: #495057;
     text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    z-index: 101;
 }
 
 .table-header > div {
@@ -226,11 +229,6 @@ body {
     align-items: center;
     justify-content: center;
     text-align: center;
-}
-
-.table-body {
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
 }
 
 .task-row {
@@ -261,6 +259,10 @@ body {
     color: #1565c0;
 }
 
+.task-row.group-row .task-resource-cell {
+    color: #1565c0;
+}
+
 .task-row.group-row .task-name-cell .expand-icon {
     margin-right: 8px;
     font-size: 12px;
@@ -287,6 +289,11 @@ body {
 }
 
 .task-row[data-parent] .task-name-cell {
+    padding-left: 24px;
+    color: #6c757d;
+}
+
+.task-row[data-parent] .task-resource-cell {
     padding-left: 24px;
     color: #6c757d;
 }
@@ -375,6 +382,22 @@ body {
     color: #007bff;
 }
 
+.task-resource-cell {
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0; /* Importante para permitir overflow en flex items */
+}
+
+.task-resource-cell:hover {
+    color: #007bff;
+}
+
 .task-name-text {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -419,12 +442,11 @@ body {
     flex-direction: column;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 102;
     overflow: hidden;
     margin: 0;
     padding: 0;
     /* CLAVE: Contenedor que permitirá que el contenido se mueva */
-    position: relative;
 }
 
 .timeline-months-row {
@@ -497,7 +519,6 @@ body {
 /* Chart Body */
 .chart-body {
     position: relative;
-    min-height: calc(100vh - 120px);
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -810,6 +831,12 @@ body.dragging {
     border: 1px solid #ced4da;
     border-radius: 4px;
     font-size: 14px;
+}
+
+#task-form input[type="color"] {
+    height: 100%; /* Misma altura que los inputs de texto (padding 10px + border 2px + altura del contenido) */
+    cursor: pointer;
+    padding: 3px; /* Reducir padding para que el color se vea mejor */
 }
 
 #task-form input:focus, #task-form select:focus {
