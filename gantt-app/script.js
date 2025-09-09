@@ -311,10 +311,14 @@ function renderChart() {
         html += `
             <div class="chart-row ${isGroup ? 'group-row' : ''}" style="height: 40px;">
                 ${isGroup ? 
-                    `<div class="group-bar" style="left: ${left}px; width: ${width}px; background: ${task.color} !important;">${task.name}</div>` :
+                    `<div class="group-bar" style="left: ${left}px; width: ${width}px; background: ${task.color} !important;">
+                        ${task.name}
+                        <span class="progress-percentage group-percentage">${task.progress}%</span>
+                    </div>` :
                     `<div class="task-bar draggable-task" data-task-id="${task.id}" style="left: ${left}px; width: ${width}px; background-color: ${task.color};" title="${task.name}">
                         <div class="progress-bar" style="width: ${task.progress}%;"></div>
                         <span>${task.name}</span>
+                        <span class="progress-percentage">${task.progress}%</span>
                     </div>`
                 }
             </div>
