@@ -966,14 +966,11 @@ function editTask(taskId) {
     // Configurar tipo (grupo o tarea)
     document.getElementById('task-type').value = task.group ? 'group' : 'task';
     
-    // Poblar dropdown de grupos padre
-    populateParentDropdown();
-    
-    // Configurar grupo padre
-    document.getElementById('task-parent').value = task.parent || '';
-    
-    // Actualizar campos según el tipo
+    // Actualizar campos según el tipo (esto llama a populateParentDropdown internamente)
     toggleTaskFields();
+    
+    // Configurar grupo padre DESPUÉS de toggleTaskFields para que no se pierda el valor
+    document.getElementById('task-parent').value = task.parent || '';
     
     // Mostrar/ocultar botón eliminar según si estamos creando o editando
     const deleteButton = document.getElementById('delete-task');

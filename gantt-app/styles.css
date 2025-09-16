@@ -888,6 +888,9 @@ body.dragging {
 .about-modal-content {
     max-width: 500px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 2% auto;
 }
 
 .about-header {
@@ -992,7 +995,7 @@ body.dragging {
 .help-modal-content {
     max-width: 800px;
     width: 95%;
-    max-height: 90vh;
+    max-height: 80vh;
     overflow-y: auto;
 }
 
