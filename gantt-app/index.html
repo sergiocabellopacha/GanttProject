@@ -47,21 +47,27 @@
     </div>
 
     <div class="gantt-wrapper">
-        <div class="gantt-table">
-            <div class="table-header">
-                <div class="col-task-name">Nombre de Tarea</div>
-                <div class="col-id">ID</div>
-                <div class="col-start">Inicio</div>
-                <div class="col-end">Fin</div>
-                <div class="col-duration">Duración (Días Laborables)</div>
-                <div class="col-progress">Progreso %</div>
-                <div class="col-dependency">Dependencia</div>
-                <div class="col-resource">Recursos</div>
-                <div class="col-color">Color</div>
+        <div class="gantt-table" id="gantt-table">
+            <div class="table-container">
+                <div class="table-header">
+                    <div class="col-task-name">Nombre de Tarea</div>
+                    <div class="col-id">ID</div>
+                    <div class="col-start">Inicio</div>
+                    <div class="col-end">Fin</div>
+                    <div class="col-duration">Duración<br>(Días Laborables)</div>
+                    <div class="col-progress">Progreso %</div>
+                    <div class="col-dependency">Dependencia</div>
+                    <div class="col-resource">Recursos</div>
+                    <div class="col-color">Color</div>
+                </div>
+                <div class="table-body" id="task-table-body">
+                    <!-- Tasks will be populated here -->
+                </div>
             </div>
-            <div class="table-body" id="task-table-body">
-                <!-- Tasks will be populated here -->
-            </div>
+        </div>
+
+        <div class="splitter" id="splitter">
+            <div class="splitter-handle"></div>
         </div>
 
         <div class="gantt-chart">

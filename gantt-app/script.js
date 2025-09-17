@@ -1234,10 +1234,119 @@ function renderAll() {
         // Configurar drag and drop después de renderizar
         setupDragAndDrop();
         
+        // Re-initialize scroll sync after rendering
+        initScrollSync();
+        
     } catch (error) {
         console.error('Error rendering Gantt:', error);
         // Fallback en caso de error
         document.getElementById('task-table-body').innerHTML = '<div style="padding: 20px; color: red;">Error al renderizar. Revisa la consola.</div>';
+    }
+}
+
+// Initialize scroll synchronization between table and chart
+function initScrollSync() {
+    const tableContainer = document.querySelector('.table-container');
+    const ganttChart = document.querySelector('.gantt-chart');
+    
+    if (!tableContainer || !ganttChart) {
+        console.warn('Could not find scroll containers for synchronization');
+        return;
+    }
+    
+    let isScrolling = false;
+    
+    // Sync vertical scroll from table to chart
+    tableContainer.addEventListener('scroll', function() {
+        if (isScrolling) return;
+        isScrolling = true;
+        ganttChart.scrollTop = tableContainer.scrollTop;
+        requestAnimationFrame(() => {
+            isScrolling = false;
+        });
+    });
+    
+    // Sync vertical scroll from chart to table
+    ganttChart.addEventListener('scroll', function() {
+        if (isScrolling) return;
+        isScrolling = true;
+        tableContainer.scrollTop = ganttChart.scrollTop;
+        requestAnimationFrame(() => {
+            isScrolling = false;
+        });
+    });
+}
+
+// Splitter functionality for resizing table width
+function initSplitter() {
+    const splitter = document.getElementById('splitter');
+    const ganttTable = document.getElementById('gantt-table');
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+    
+    const minWidth = 400; // Minimum table width
+    const maxWidth = window.innerWidth * 0.8; // Maximum 80% of window width
+    
+    splitter.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = ganttTable.offsetWidth;
+        
+        // Add visual feedback
+        document.body.style.cursor = 'col-resize';
+        splitter.style.background = '#007bff';
+        
+        // Prevent text selection during resize
+        document.body.style.userSelect = 'none';
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        
+        const deltaX = e.clientX - startX;
+        const newWidth = startWidth + deltaX;
+        
+        // Apply constraints
+        if (newWidth >= minWidth && newWidth <= maxWidth) {
+            ganttTable.style.width = newWidth + 'px';
+        }
+    });
+    
+    document.addEventListener('mouseup', function() {
+        if (isResizing) {
+            isResizing = false;
+            
+            // Remove visual feedback
+            document.body.style.cursor = '';
+            splitter.style.background = '';
+            document.body.style.userSelect = '';
+        }
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        const currentWidth = ganttTable.offsetWidth;
+        const newMaxWidth = window.innerWidth * 0.8;
+        
+        if (currentWidth > newMaxWidth) {
+            ganttTable.style.width = newMaxWidth + 'px';
+        }
+    });
+}
+
+// Load test data from test-data-2026.json if available
+async function loadTestData() {
+    try {
+        const response = await fetch('./test-data-2026.json');
+        if (response.ok) {
+            const testData = await response.json();
+            ganttData = testData;
+            console.log('Test data loaded successfully:', testData.tasks.length, 'tasks');
+        }
+    } catch (error) {
+        console.log('Test data file not found or error loading, using default data');
     }
 }
 
@@ -1786,13 +1895,20 @@ window.updateTaskField = updateTaskField;
 window.changeTaskColor = changeTaskColor;
 window.validateWorkdayDate = validateWorkdayDate;
 
-// Initialize
-renderAll();
+    // Load test data if available and then initialize
+    loadTestData().then(() => {
+        renderAll();
+    });
 
-// Sync scroll between timeline header and chart body
-const chartContainer = document.querySelector('.gantt-chart');
-const timelineHeader = document.getElementById('timeline-header');
-const chartBody = document.getElementById('chart-body');
+    // Initialize scroll synchronization
+    initScrollSync();
 
+    // Sync scroll between timeline header and chart body
+    const chartContainer = document.querySelector('.gantt-chart');
+    const timelineHeader = document.getElementById('timeline-header');
+    const chartBody = document.getElementById('chart-body');
+
+    // Splitter functionality for resizing table width
+    initSplitter();
 
 }); // End of DOMContentLoaded
