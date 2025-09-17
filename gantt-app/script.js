@@ -1336,20 +1336,6 @@ function initSplitter() {
     });
 }
 
-// Load test data from test-data-2026.json if available
-async function loadTestData() {
-    try {
-        const response = await fetch('./test-data-2026.json');
-        if (response.ok) {
-            const testData = await response.json();
-            ganttData = testData;
-            console.log('Test data loaded successfully:', testData.tasks.length, 'tasks');
-        }
-    } catch (error) {
-        console.log('Test data file not found or error loading, using default data');
-    }
-}
-
 // Event Listeners - Wrap in DOMContentLoaded to ensure DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -1895,11 +1881,8 @@ window.updateTaskField = updateTaskField;
 window.changeTaskColor = changeTaskColor;
 window.validateWorkdayDate = validateWorkdayDate;
 
-    // Load test data if available and then initialize
-    loadTestData().then(() => {
-        renderAll();
-    });
 
+    renderAll();
     // Initialize scroll synchronization
     initScrollSync();
 
